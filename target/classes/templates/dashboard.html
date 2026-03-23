@@ -69,6 +69,13 @@
         .nav-btn-ghost:hover { background: rgba(255,255,255,0.06); color: #fff; }
         .nav-btn-admin { color: #ffd200; border-color: rgba(255,215,0,0.3); }
         .nav-btn-admin:hover { background: rgba(255,215,0,0.1); }
+        .nav-btn-home { color: rgba(255,255,255,0.5); border-color: rgba(255,255,255,0.08); }
+        .nav-btn-home:hover { background: rgba(255,255,255,0.06); color: #fff; }
+
+        /* ─── FOOTER ─── */
+        .page-footer { text-align: center; padding: 40px 24px 32px; border-top: 1px solid rgba(255,255,255,0.05); margin-top: 20px; }
+        .page-footer p { color: rgba(255,255,255,0.15); font-size: 0.82rem; }
+        .page-footer span { color: rgba(255,255,255,0.3); font-weight: 600; }
 
         /* ─── MAIN ─── */
         .container { max-width: 980px; margin: 0 auto; padding: 50px 24px; }
@@ -209,6 +216,7 @@
             <span class="brand-text">CryptoVault</span>
         </div>
         <div class="nav-right">
+            <a href="/" class="nav-btn nav-btn-home">🏠 Home</a>
             <div class="nav-user">
                 <div class="avatar" th:text="${username.substring(0,1).toUpperCase()}">U</div>
                 <span th:text="${username}" style="font-size:0.85rem; color:rgba(255,255,255,0.7);"></span>
@@ -314,6 +322,11 @@
             </div>
         </div>
     </div>
+
+    <!-- Footer -->
+    <footer class="page-footer">
+        <p>🔒 <span>CryptoVault</span> &nbsp;·&nbsp; Built with Spring Boot &amp; AES-128 &nbsp;·&nbsp; Designed by <span>Jevin</span> &nbsp;·&nbsp; 2026</p>
+    </footer>
 
     <script>
         let selectedFile = null;
