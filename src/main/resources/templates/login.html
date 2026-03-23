@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>CryptoVault – Login</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            min-height: 100vh;
+            background: #0a0a1a;
+            display: flex; align-items: center; justify-content: center;
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Animated gradient orbs */
+        .orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.35;
+            animation: float 8s ease-in-out infinite;
+            pointer-events: none;
+        }
+        .orb-1 { width: 500px; height: 500px; background: #6c47ff; top: -150px; left: -150px; animation-delay: 0s; }
+        .orb-2 { width: 400px; height: 400px; background: #ff47a3; bottom: -100px; right: -100px; animation-delay: -3s; }
+        .orb-3 { width: 300px; height: 300px; background: #47c8ff; top: 50%; left: 50%; transform: translate(-50%, -50%); animation-delay: -5s; }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(30px, -20px) scale(1.05); }
+            66% { transform: translate(-20px, 30px) scale(0.97); }
+        }
+
+        /* Particle dots */
+        .particles { position: fixed; inset: 0; overflow: hidden; pointer-events: none; }
+        .particle {
+            position: absolute;
+            width: 2px; height: 2px;
+            background: rgba(255,255,255,0.5);
+            border-radius: 50%;
+            animation: rise linear infinite;
+        }
+        @keyframes rise {
+            from { transform: translateY(100vh) scale(0); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 0.5; }
+            to { transform: translateY(-10px) scale(1); opacity: 0; }
+        }
+
+        .card {
+            position: relative; z-index: 10;
+            background: rgba(255,255,255,0.04);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 28px;
+            padding: 56px 48px;
+            width: 100%;
+            max-width: 440px;
+            box-shadow: 0 40px 100px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.1);
+            color: #fff;
+            text-align: center;
+            animation: slideUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(40px) scale(0.95); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .logo-ring {
+            width: 80px; height: 80px;
+            margin: 0 auto 24px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #6c47ff, #ff47a3);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 2rem;
+            box-shadow: 0 0 40px rgba(108,71,255,0.6), 0 0 80px rgba(108,71,255,0.2);
+            animation: pulse-glow 3s infinite;
+        }
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 40px rgba(108,71,255,0.6), 0 0 80px rgba(108,71,255,0.2); }
+            50% { box-shadow: 0 0 60px rgba(108,71,255,0.9), 0 0 120px rgba(108,71,255,0.4); }
+        }
+
+        h1 { font-size: 2rem; font-weight: 800; letter-spacing: -0.5px; background: linear-gradient(90deg, #fff, #c4b5fd); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        p.sub { color: rgba(255,255,255,0.4); margin: 8px 0 36px; font-size: 0.88rem; }
+
+        .form-group { text-align: left; margin-bottom: 20px; }
+        label { font-size: 0.78rem; font-weight: 600; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.8px; display: block; margin-bottom: 8px; }
+        
+        .input-wrap { position: relative; }
+        .input-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 1rem; opacity: 0.4; }
+        
+        input {
+            width: 100%;
+            padding: 14px 16px 14px 42px;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 14px;
+            color: #fff;
+            font-size: 0.95rem;
+            font-family: 'Inter', sans-serif;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+        input::placeholder { color: rgba(255,255,255,0.25); }
+        input:focus {
+            border-color: #6c47ff;
+            background: rgba(108,71,255,0.1);
+            box-shadow: 0 0 0 4px rgba(108,71,255,0.15);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #6c47ff 0%, #9b59e8 50%, #c47aff 100%);
+            background-size: 200% 200%;
+            color: white; border: none; border-radius: 14px;
+            font-size: 1rem; font-weight: 700;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 8px;
+            position: relative; overflow: hidden;
+            letter-spacing: 0.3px;
+        }
+        .btn::before {
+            content: '';
+            position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+            transition: left 0.5s;
+        }
+        .btn:hover::before { left: 100%; }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 12px 35px rgba(108,71,255,0.6); }
+        .btn:active { transform: translateY(0); }
+
+        .alert {
+            padding: 12px 16px; border-radius: 12px;
+            margin-bottom: 24px; font-size: 0.88rem; font-weight: 500;
+            animation: shake 0.4s ease;
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-8px); }
+            75% { transform: translateX(8px); }
+        }
+        .alert-danger { background: rgba(255,60,80,0.15); border: 1px solid rgba(255,60,80,0.3); color: #ff8090; }
+        .alert-success { background: rgba(60,220,130,0.15); border: 1px solid rgba(60,220,130,0.3); color: #60df90; }
+
+        .divider { display: flex; align-items: center; gap: 12px; margin: 24px 0; }
+        .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: rgba(255,255,255,0.08); }
+        .divider span { color: rgba(255,255,255,0.2); font-size: 0.78rem; }
+
+        .link-row { color: rgba(255,255,255,0.4); font-size: 0.88rem; }
+        .link-row a { color: #a78bfa; text-decoration: none; font-weight: 600; transition: color 0.2s; }
+        .link-row a:hover { color: #c4b5fd; }
+
+        .security-badges { display: flex; justify-content: center; gap: 10px; margin-top: 28px; }
+        .badge { padding: 4px 12px; border-radius: 20px; font-size: 0.72rem; font-weight: 600; border: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.4); }
+    </style>
+</head>
+<body>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+
+    <div class="particles" id="particles"></div>
+
+    <div class="card">
+        <div class="logo-ring">🔐</div>
+        <h1>CryptoVault</h1>
+        <p class="sub">Secure File Storage with AES-128 Encryption</p>
+
+        <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
+        <div th:if="${message}" class="alert alert-success" th:text="${message}"></div>
+        <div th:if="${param.registered}" class="alert alert-success">✅ Account created! Please login.</div>
+        <div th:if="${param.logout}" class="alert alert-success">👋 You've been logged out safely.</div>
+
+        <form th:action="@{/login}" method="post">
+            <div class="form-group">
+                <label>Username</label>
+                <div class="input-wrap">
+                    <span class="input-icon">👤</span>
+                    <input type="text" name="username" placeholder="Enter your username" required autocomplete="username">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <div class="input-wrap">
+                    <span class="input-icon">🔑</span>
+                    <input type="password" name="password" placeholder="Enter your password" required autocomplete="current-password">
+                </div>
+            </div>
+            <button type="submit" class="btn">Sign In →</button>
+        </form>
+
+        <div class="divider"><span>or</span></div>
+        <div class="link-row">New to CryptoVault? <a href="/register">Create an account</a></div>
+
+        <div class="security-badges">
+            <span class="badge">🔒 AES-128</span>
+            <span class="badge">🛡️ BCrypt</span>
+            <span class="badge">⚡ Spring Boot</span>
+        </div>
+    </div>
+
+    <script>
+        // Generate floating particles
+        const container = document.getElementById('particles');
+        for (let i = 0; i < 60; i++) {
+            const p = document.createElement('div');
+            p.className = 'particle';
+            p.style.left = Math.random() * 100 + 'vw';
+            p.style.animationDuration = (6 + Math.random() * 14) + 's';
+            p.style.animationDelay = (Math.random() * 12) + 's';
+            p.style.width = p.style.height = (1 + Math.random() * 3) + 'px';
+            p.style.opacity = Math.random() * 0.7;
+            container.appendChild(p);
+        }
+    </script>
+</body>
+</html>

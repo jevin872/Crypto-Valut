@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CryptoVault – Secure File Storage by Jevin</title>
+    <meta name="description" content="CryptoVault is a military-grade AES-128 encrypted file storage system built with Spring Boot. Created by Jevin.">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --purple: #6c47ff;
+            --pink: #ff47a3;
+            --teal: #00c9a7;
+            --gold: #ffd200;
+        }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #06060f;
+            color: #fff;
+            overflow-x: hidden;
+        }
+
+        /* ─── ANIMATED BACKGROUND ─── */
+        .bg-canvas {
+            position: fixed; inset: 0; z-index: 0; pointer-events: none;
+            background:
+                radial-gradient(ellipse 80% 60% at 20% 10%, rgba(108,71,255,0.15) 0%, transparent 60%),
+                radial-gradient(ellipse 60% 50% at 80% 80%, rgba(255,71,163,0.12) 0%, transparent 60%),
+                radial-gradient(ellipse 50% 40% at 50% 50%, rgba(0,201,167,0.06) 0%, transparent 60%);
+        }
+        body::before {
+            content: '';
+            position: fixed; inset: 0; z-index: 0;
+            background-image: linear-gradient(rgba(108,71,255,0.03) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(108,71,255,0.03) 1px, transparent 1px);
+            background-size: 60px 60px;
+            animation: grid-drift 30s linear infinite;
+            pointer-events: none;
+        }
+        @keyframes grid-drift { to { background-position: 60px 60px; } }
+
+        /* Floating orbs */
+        .orb { position: fixed; border-radius: 50%; filter: blur(120px); pointer-events: none; }
+        .orb-1 { width: 700px; height: 700px; background: rgba(108,71,255,0.18); top: -300px; left: -200px; animation: orb-float 14s ease-in-out infinite; }
+        .orb-2 { width: 500px; height: 500px; background: rgba(255,71,163,0.14); bottom: -200px; right: -150px; animation: orb-float 18s ease-in-out infinite reverse; }
+        .orb-3 { width: 350px; height: 350px; background: rgba(0,201,167,0.1); top: 40%; left: 60%; animation: orb-float 12s ease-in-out infinite 3s; }
+        @keyframes orb-float { 0%,100% { transform: translate(0,0) scale(1); } 33% { transform: translate(40px,-50px) scale(1.05); } 66% { transform: translate(-30px,30px) scale(0.97); } }
+
+        /* Particle stars */
+        #stars { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+        .star { position: absolute; border-radius: 50%; background: white; animation: twinkle linear infinite; }
+        @keyframes twinkle { 0%,100% { opacity: 0.1; } 50% { opacity: 0.8; } }
+
+        /* ─── NAVBAR ─── */
+        nav {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 16px 60px;
+            background: rgba(6,6,15,0.6);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            transition: padding 0.3s;
+        }
+        .nav-logo { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+        .nav-logo-icon {
+            width: 40px; height: 40px; border-radius: 12px;
+            background: linear-gradient(135deg, var(--purple), var(--pink));
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.1rem;
+            box-shadow: 0 0 20px rgba(108,71,255,0.5);
+            animation: logo-pulse 3s ease-in-out infinite;
+        }
+        @keyframes logo-pulse { 0%,100% { box-shadow: 0 0 20px rgba(108,71,255,0.5); } 50% { box-shadow: 0 0 40px rgba(108,71,255,0.8), 0 0 60px rgba(255,71,163,0.3); } }
+        .nav-logo-text { font-size: 1.2rem; font-weight: 800; background: linear-gradient(90deg, #fff, #c4b5fd); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+
+        .nav-links { display: flex; align-items: center; gap: 8px; }
+        .nav-link { padding: 8px 18px; border-radius: 10px; font-size: 0.88rem; font-weight: 600; text-decoration: none; transition: all 0.2s; }
+        .nav-link-ghost { color: rgba(255,255,255,0.5); }
+        .nav-link-ghost:hover { background: rgba(255,255,255,0.06); color: #fff; }
+        .nav-link-primary {
+            background: linear-gradient(135deg, var(--purple), #9d6fff);
+            color: white;
+            box-shadow: 0 4px 15px rgba(108,71,255,0.4);
+        }
+        .nav-link-primary:hover { transform: translateY(-1px); box-shadow: 0 8px 25px rgba(108,71,255,0.6); }
+
+        /* ─── HERO ─── */
+        .hero {
+            position: relative; z-index: 10;
+            min-height: 100vh;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            text-align: center;
+            padding: 120px 24px 80px;
+        }
+
+        .hero-badge {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 6px 16px;
+            background: rgba(108,71,255,0.12);
+            border: 1px solid rgba(108,71,255,0.3);
+            border-radius: 100px;
+            font-size: 0.8rem; font-weight: 600; color: #a78bfa;
+            margin-bottom: 32px;
+            animation: fadeDown 0.8s ease 0.2s both;
+        }
+        .hero-badge::before { content: '●'; color: #6c47ff; animation: blink 2s infinite; }
+        @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.2; } }
+
+        .hero-title {
+            font-size: clamp(3rem, 8vw, 6.5rem);
+            font-weight: 900;
+            letter-spacing: -4px;
+            line-height: 1;
+            margin-bottom: 28px;
+            animation: fadeDown 0.8s ease 0.4s both;
+        }
+        .hero-title .line2 {
+            display: block;
+            background: linear-gradient(135deg, var(--purple), var(--pink), var(--teal));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            background-size: 200% 200%;
+            animation: fadeDown 0.8s ease 0.4s both, gradient-shift 4s ease infinite;
+        }
+        @keyframes gradient-shift { 0%,100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+
+        .hero-sub {
+            max-width: 620px;
+            font-size: 1.15rem; font-weight: 400;
+            color: rgba(255,255,255,0.45);
+            line-height: 1.7;
+            margin-bottom: 48px;
+            animation: fadeDown 0.8s ease 0.6s both;
+        }
+        .hero-sub strong { color: rgba(255,255,255,0.75); font-weight: 600; }
+
+        .hero-cta {
+            display: flex; gap: 16px; flex-wrap: wrap; justify-content: center;
+            animation: fadeDown 0.8s ease 0.8s both;
+        }
+        .btn-hero-primary {
+            display: inline-flex; align-items: center; gap: 10px;
+            padding: 16px 36px;
+            background: linear-gradient(135deg, var(--purple), #9d6fff);
+            color: white; text-decoration: none; border-radius: 14px;
+            font-size: 1rem; font-weight: 700;
+            box-shadow: 0 8px 30px rgba(108,71,255,0.5);
+            transition: all 0.3s; position: relative; overflow: hidden;
+        }
+        .btn-hero-primary::before { content:''; position:absolute; top:0; left:-100%; width:100%; height:100%; background:linear-gradient(90deg,transparent,rgba(255,255,255,0.15),transparent); transition:left 0.5s; }
+        .btn-hero-primary:hover::before { left:100%; }
+        .btn-hero-primary:hover { transform: translateY(-3px); box-shadow: 0 16px 40px rgba(108,71,255,0.7); }
+        .btn-hero-secondary {
+            display: inline-flex; align-items: center; gap: 10px;
+            padding: 16px 36px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.12);
+            color: rgba(255,255,255,0.7); text-decoration: none; border-radius: 14px;
+            font-size: 1rem; font-weight: 600;
+            transition: all 0.3s;
+        }
+        .btn-hero-secondary:hover { background: rgba(255,255,255,0.08); color: #fff; transform: translateY(-2px); }
+
+        /* Floating badge below CTA */
+        .hero-trust { display: flex; align-items: center; gap: 24px; margin-top: 56px; flex-wrap: wrap; justify-content: center; animation: fadeDown 0.8s ease 1s both; }
+        .trust-item { display: flex; align-items: center; gap: 6px; color: rgba(255,255,255,0.3); font-size: 0.82rem; }
+        .trust-item strong { color: rgba(255,255,255,0.6); }
+
+        /* Animated preview card */
+        .hero-preview {
+            margin-top: 80px; position: relative; z-index: 10;
+            animation: fadeUp 1s ease 1.2s both;
+            max-width: 700px; margin-left: auto; margin-right: auto;
+        }
+        .preview-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 24px;
+            padding: 28px;
+            box-shadow: 0 40px 100px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05);
+            backdrop-filter: blur(20px);
+        }
+        .preview-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 20px; }
+        .dot { width: 12px; height: 12px; border-radius: 50%; }
+        .dot-red { background: #ff5f57; }
+        .dot-yellow { background: #ffbd2e; }
+        .dot-green { background: #28c940; }
+        .preview-url { flex: 1; background: rgba(255,255,255,0.05); border-radius: 6px; padding: 5px 12px; font-size: 0.78rem; color: rgba(255,255,255,0.3); margin-left: 8px; }
+        .preview-body { display: flex; flex-direction: column; gap: 10px; }
+        .code-line { display: flex; align-items: center; gap: 12px; padding: 10px 16px; background: rgba(255,255,255,0.03); border-radius: 10px; font-size: 0.82rem; }
+        .code-line.upload { border-left: 2px solid var(--purple); animation: slide-in 0.5s ease 2s both; }
+        .code-line.success { border-left: 2px solid var(--teal); animation: slide-in 0.5s ease 2.3s both; }
+        .code-line.download { border-left: 2px solid var(--pink); animation: slide-in 0.5s ease 2.6s both; }
+        @keyframes slide-in { from { opacity:0; transform: translateX(-10px); } to { opacity:1; transform: translateX(0); } }
+        .code-method { font-size: 0.7rem; font-weight: 700; padding: 2px 8px; border-radius: 4px; }
+        .post { background: rgba(108,71,255,0.2); color: #a78bfa; }
+        .get { background: rgba(0,201,167,0.15); color: var(--teal); }
+        .code-url { color: rgba(255,255,255,0.5); flex: 1; }
+        .code-status { font-size: 0.75rem; color: var(--teal); font-weight: 600; }
+
+        @keyframes fadeDown { from { opacity:0; transform:translateY(-20px); } to { opacity:1; transform:translateY(0); } }
+        @keyframes fadeUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+
+        /* ─── FEATURES SECTION ─── */
+        .section { position: relative; z-index: 10; padding: 100px 24px; max-width: 1100px; margin: 0 auto; }
+        .section-label { text-align: center; font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; color: var(--purple); margin-bottom: 16px; }
+        .section-title { text-align: center; font-size: clamp(2rem, 5vw, 3rem); font-weight: 800; letter-spacing: -1.5px; margin-bottom: 16px; }
+        .section-sub { text-align: center; color: rgba(255,255,255,0.35); font-size: 1.05rem; max-width: 540px; margin: 0 auto 64px; line-height: 1.7; }
+
+        .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+        .feature-card {
+            background: rgba(255,255,255,0.025);
+            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 20px; padding: 32px;
+            transition: all 0.3s; position: relative; overflow: hidden;
+        }
+        .feature-card::before { content:''; position:absolute; inset:0; background: var(--card-glow); opacity:0; transition: opacity 0.3s; border-radius: inherit; }
+        .feature-card:hover { transform: translateY(-6px); border-color: rgba(255,255,255,0.14); }
+        .feature-card:hover::before { opacity: 1; }
+        .feature-card-1 { --card-glow: radial-gradient(circle at 30% 30%, rgba(108,71,255,0.08), transparent 70%); }
+        .feature-card-2 { --card-glow: radial-gradient(circle at 30% 30%, rgba(0,201,167,0.07), transparent 70%); }
+        .feature-card-3 { --card-glow: radial-gradient(circle at 30% 30%, rgba(255,71,163,0.07), transparent 70%); }
+        .feature-card-4 { --card-glow: radial-gradient(circle at 30% 30%, rgba(255,210,0,0.07), transparent 70%); }
+        .feature-card-5 { --card-glow: radial-gradient(circle at 30% 30%, rgba(59,130,246,0.07), transparent 70%); }
+        .feature-card-6 { --card-glow: radial-gradient(circle at 30% 30%, rgba(168,85,247,0.07), transparent 70%); }
+
+        .feature-icon { font-size: 2.2rem; margin-bottom: 20px; display: block; }
+        .feature-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 12px; }
+        .feature-desc { color: rgba(255,255,255,0.35); font-size: 0.9rem; line-height: 1.7; }
+
+        /* ─── ABOUT / CREATOR ─── */
+        .about-section {
+            position: relative; z-index: 10;
+            padding: 100px 24px;
+            background: rgba(255,255,255,0.015);
+            border-top: 1px solid rgba(255,255,255,0.05);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .about-inner { max-width: 1000px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center; }
+        .about-text .label { font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; color: var(--teal); margin-bottom: 16px; }
+        .about-text h2 { font-size: 2.5rem; font-weight: 800; letter-spacing: -1px; margin-bottom: 20px; line-height: 1.1; }
+        .about-text h2 span { background: linear-gradient(90deg, var(--teal), var(--purple)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .about-text p { color: rgba(255,255,255,0.45); line-height: 1.8; font-size: 0.97rem; margin-bottom: 16px; }
+        .about-text p strong { color: rgba(255,255,255,0.75); }
+
+        .creator-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 24px; padding: 40px;
+            text-align: center; position: relative; overflow: hidden;
+        }
+        .creator-card::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background: linear-gradient(90deg, var(--purple), var(--pink), var(--teal)); }
+        .creator-avatar {
+            width: 100px; height: 100px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--purple), var(--pink));
+            display: flex; align-items: center; justify-content: center;
+            font-size: 2.8rem; margin: 0 auto 20px;
+            box-shadow: 0 0 40px rgba(108,71,255,0.4), 0 0 80px rgba(255,71,163,0.2);
+            animation: avatar-glow 4s ease-in-out infinite;
+        }
+        @keyframes avatar-glow {
+            0%,100% { box-shadow: 0 0 40px rgba(108,71,255,0.4), 0 0 80px rgba(255,71,163,0.2); }
+            50% { box-shadow: 0 0 60px rgba(108,71,255,0.7), 0 0 120px rgba(255,71,163,0.4); }
+        }
+        .creator-name { font-size: 1.6rem; font-weight: 800; margin-bottom: 6px; }
+        .creator-title { color: rgba(255,255,255,0.4); font-size: 0.88rem; margin-bottom: 20px; }
+        .creator-tags { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 24px; }
+        .creator-tag { padding: 4px 14px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.5); }
+        .creator-quote {
+            font-size: 0.9rem; font-style: italic;
+            color: rgba(255,255,255,0.35); line-height: 1.7;
+            border-top: 1px solid rgba(255,255,255,0.06); padding-top: 20px;
+        }
+
+        /* ─── TECH STACK ─── */
+        .tech-section { position: relative; z-index: 10; padding: 80px 24px; max-width: 1000px; margin: 0 auto; }
+        .tech-grid { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-top: 40px; }
+        .tech-badge {
+            display: flex; align-items: center; gap: 8px;
+            padding: 10px 20px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px; font-size: 0.88rem; font-weight: 600;
+            color: rgba(255,255,255,0.6);
+            transition: all 0.2s;
+        }
+        .tech-badge:hover { background: rgba(255,255,255,0.08); color: #fff; transform: translateY(-2px); }
+        .tech-badge .ticon { font-size: 1.2rem; }
+
+        /* ─── FOOTER ─── */
+        footer {
+            position: relative; z-index: 10;
+            border-top: 1px solid rgba(255,255,255,0.05);
+            padding: 48px 60px;
+            display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px;
+        }
+        .footer-brand { font-size: 0.9rem; color: rgba(255,255,255,0.25); }
+        .footer-brand strong { color: rgba(255,255,255,0.6); font-weight: 700; }
+        .footer-links { display: flex; gap: 24px; }
+        .footer-links a { color: rgba(255,255,255,0.25); font-size: 0.85rem; text-decoration: none; transition: color 0.2s; }
+        .footer-links a:hover { color: rgba(255,255,255,0.6); }
+
+        @media (max-width: 768px) {
+            nav { padding: 14px 20px; }
+            .about-inner { grid-template-columns: 1fr; gap: 40px; }
+            footer { padding: 32px 20px; flex-direction: column; text-align: center; }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-canvas"></div>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+    <div id="stars"></div>
+
+    <!-- ─── NAVBAR ─── -->
+    <nav>
+        <a href="/" class="nav-logo">
+            <div class="nav-logo-icon">🔒</div>
+            <span class="nav-logo-text">CryptoVault</span>
+        </a>
+        <div class="nav-links">
+            <a href="#features" class="nav-link nav-link-ghost">Features</a>
+            <a href="#about" class="nav-link nav-link-ghost">About</a>
+            <a href="/login" class="nav-link nav-link-ghost">Login</a>
+            <a href="/register" class="nav-link nav-link-primary">Get Started →</a>
+        </div>
+    </nav>
+
+    <!-- ─── HERO ─── -->
+    <section class="hero">
+        <div class="hero-badge">Built with Spring Boot &amp; AES-128 Encryption</div>
+
+        <h1 class="hero-title">
+            Your Files,<br>
+            <span class="line2">Encrypted Forever.</span>
+        </h1>
+
+        <p class="hero-sub">
+            <strong>CryptoVault</strong> is a secure file storage system that encrypts every file you upload
+            using <strong>AES-128</strong> before it ever touches the disk. No one — not even the server — can read your data without your key.
+        </p>
+
+        <div class="hero-cta">
+            <a href="/register" class="btn-hero-primary">🚀 Create Free Account</a>
+            <a href="/login" class="btn-hero-secondary">🔐 Sign In</a>
+        </div>
+
+        <div class="hero-trust">
+            <div class="trust-item">🔒 <strong>AES-128</strong> Military-grade encryption</div>
+            <div class="trust-item">👤 <strong>Per-user</strong> File isolation</div>
+            <div class="trust-item">⭐ <strong>Admin</strong> Control panel</div>
+            <div class="trust-item">⚡ <strong>Spring Boot</strong> Backend</div>
+        </div>
+
+        <!-- Animated API preview card -->
+        <div class="hero-preview">
+            <div class="preview-card">
+                <div class="preview-bar">
+                    <div class="dot dot-red"></div>
+                    <div class="dot dot-yellow"></div>
+                    <div class="dot dot-green"></div>
+                    <div class="preview-url">localhost:8080/api/files</div>
+                </div>
+                <div class="preview-body">
+                    <div class="code-line upload">
+                        <span class="code-method post">POST</span>
+                        <span class="code-url">/api/files/upload  →  AES encrypt  →  save to disk</span>
+                        <span class="code-status">201 ✓</span>
+                    </div>
+                    <div class="code-line success">
+                        <span class="code-method get">GET</span>
+                        <span class="code-url">/api/files/download/1  →  AES decrypt  →  stream file</span>
+                        <span class="code-status">200 ✓</span>
+                    </div>
+                    <div class="code-line download">
+                        <span class="code-method get">GET</span>
+                        <span class="code-url">/admin  →  view all users &amp; files  →  admin only</span>
+                        <span class="code-status">200 ✓</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ─── FEATURES ─── -->
+    <div id="features">
+        <div class="section">
+            <div class="section-label">What's Inside</div>
+            <h2 class="section-title">Everything You Need</h2>
+            <p class="section-sub">A complete, production-ready secure file storage platform — built from scratch in Spring Boot.</p>
+
+            <div class="features-grid">
+                <div class="feature-card feature-card-1">
+                    <span class="feature-icon">🔐</span>
+                    <h3 class="feature-title">AES-128 File Encryption</h3>
+                    <p class="feature-desc">Every file is encrypted using Advanced Encryption Standard (AES-128) before being stored on disk. Your data is unreadable without the key.</p>
+                </div>
+                <div class="feature-card feature-card-2">
+                    <span class="feature-icon">👤</span>
+                    <h3 class="feature-title">User Accounts & Auth</h3>
+                    <p class="feature-desc">Full registration and login system powered by Spring Security. Passwords are hashed using BCrypt — never stored in plain text.</p>
+                </div>
+                <div class="feature-card feature-card-3">
+                    <span class="feature-icon">📁</span>
+                    <h3 class="feature-title">Private File Vault</h3>
+                    <p class="feature-desc">Each user can only access their own uploaded files. Complete data isolation enforced at the service and API layer.</p>
+                </div>
+                <div class="feature-card feature-card-4">
+                    <span class="feature-icon">⭐</span>
+                    <h3 class="feature-title">Admin Control Panel</h3>
+                    <p class="feature-desc">Admin users get full visibility — view all registered users, all uploaded files, and system overview stats in a premium dashboard.</p>
+                </div>
+                <div class="feature-card feature-card-5">
+                    <span class="feature-icon">⚡</span>
+                    <h3 class="feature-title">REST API Ready</h3>
+                    <p class="feature-desc">Clean REST endpoints for upload and download. CSRF protection, role-based access, and proper HTTP status codes throughout.</p>
+                </div>
+                <div class="feature-card feature-card-6">
+                    <span class="feature-icon">🎨</span>
+                    <h3 class="feature-title">Premium Dark UI</h3>
+                    <p class="feature-desc">Glassmorphism design with animated orbs, particle effects, drag-and-drop upload zones, and smooth micro-animations across all pages.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ─── ABOUT / CREATOR ─── -->
+    <div id="about">
+        <div class="about-section">
+            <div class="about-inner">
+                <div class="about-text">
+                    <p class="label">About the Project</p>
+                    <h2>Built with <span>passion</span> &amp; precision.</h2>
+                    <p>
+                        <strong>CryptoVault</strong> was created as a full-stack demonstration of how modern Java backend technology can be combined with elegant frontend design to produce a genuinely secure and visually stunning application.
+                    </p>
+                    <p>
+                        The project uses <strong>Spring Boot 3</strong> for the backend, <strong>Spring Security</strong> for authentication, <strong>Spring Data JPA</strong> for persistence, and <strong>Thymeleaf</strong> for server-side rendering — all wired together with a custom AES encryption utility class.
+                    </p>
+                    <p>
+                        Every design decision — from the per-user file isolation to the admin role separation — was made to reflect real-world security principles in a beginner-friendly, clean codebase.
+                    </p>
+                </div>
+
+                <div class="creator-card">
+                    <div class="creator-avatar">👨‍💻</div>
+                    <div class="creator-name">Jevin</div>
+                    <div class="creator-title">Full-Stack Java Developer</div>
+                    <div class="creator-tags">
+                        <span class="creator-tag">☕ Java</span>
+                        <span class="creator-tag">🍃 Spring Boot</span>
+                        <span class="creator-tag">🔐 Security</span>
+                        <span class="creator-tag">🎨 UI/UX</span>
+                        <span class="creator-tag">🗄️ MySQL</span>
+                    </div>
+                    <div class="creator-quote">
+                        "I built CryptoVault to explore the intersection of security engineering and clean, modern design — proving that backend projects can look just as good as they work."
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ─── TECH STACK ─── -->
+    <div class="tech-section">
+        <div class="section-label" style="text-align:center">Tech Stack</div>
+        <h2 class="section-title">Built With</h2>
+        <div class="tech-grid">
+            <div class="tech-badge"><span class="ticon">☕</span> Java 17+</div>
+            <div class="tech-badge"><span class="ticon">🍃</span> Spring Boot 3.2</div>
+            <div class="tech-badge"><span class="ticon">🛡️</span> Spring Security</div>
+            <div class="tech-badge"><span class="ticon">🗄️</span> Spring Data JPA</div>
+            <div class="tech-badge"><span class="ticon">🔐</span> AES-128 Encryption</div>
+            <div class="tech-badge"><span class="ticon">🔑</span> BCrypt Hashing</div>
+            <div class="tech-badge"><span class="ticon">🌿</span> Thymeleaf</div>
+            <div class="tech-badge"><span class="ticon">🐬</span> MySQL / H2</div>
+            <div class="tech-badge"><span class="ticon">🎨</span> Vanilla CSS</div>
+            <div class="tech-badge"><span class="ticon">⚡</span> REST API</div>
+        </div>
+    </div>
+
+    <!-- ─── FOOTER ─── -->
+    <footer>
+        <div class="footer-brand">
+            🔒 <strong>CryptoVault</strong> — Secure File Storage System<br>
+            <span style="font-size:0.8rem;">Designed &amp; developed by <strong style="color:rgba(255,255,255,0.5);">Jevin</strong> · 2026</span>
+        </div>
+        <div class="footer-links">
+            <a href="/login">Login</a>
+            <a href="/register">Register</a>
+            <a href="#features">Features</a>
+            <a href="#about">About</a>
+        </div>
+    </footer>
+
+    <script>
+        // Generate twinkling stars
+        const starsEl = document.getElementById('stars');
+        for (let i = 0; i < 120; i++) {
+            const s = document.createElement('div');
+            s.className = 'star';
+            const size = Math.random() * 2.5 + 0.5;
+            s.style.cssText = `
+                left: ${Math.random()*100}vw;
+                top: ${Math.random()*100}vh;
+                width: ${size}px;
+                height: ${size}px;
+                opacity: ${Math.random()*0.5 + 0.1};
+                animation-duration: ${3 + Math.random()*6}s;
+                animation-delay: ${Math.random()*6}s;
+            `;
+            starsEl.appendChild(s);
+        }
+
+        // Smooth navbar shrink on scroll
+        window.addEventListener('scroll', () => {
+            const nav = document.querySelector('nav');
+            nav.style.padding = window.scrollY > 40 ? '10px 60px' : '16px 60px';
+        });
+    </script>
+</body>
+</html>

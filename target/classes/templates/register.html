@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>CryptoVault – Register</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            min-height: 100vh;
+            background: #0a0a1a;
+            display: flex; align-items: center; justify-content: center;
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+        }
+        .orb { position: fixed; border-radius: 50%; filter: blur(80px); opacity: 0.3; animation: float 8s ease-in-out infinite; pointer-events: none; }
+        .orb-1 { width: 500px; height: 500px; background: #00c9a7; top: -150px; right: -150px; animation-delay: 0s; }
+        .orb-2 { width: 400px; height: 400px; background: #1a6bff; bottom: -100px; left: -100px; animation-delay: -4s; }
+        @keyframes float {
+            0%, 100% { transform: translate(0,0) scale(1); }
+            50% { transform: translate(20px, -30px) scale(1.05); }
+        }
+        .particles { position: fixed; inset: 0; overflow: hidden; pointer-events: none; }
+        .particle { position: absolute; border-radius: 50%; animation: rise linear infinite; }
+        @keyframes rise { from { transform: translateY(100vh); opacity: 0; } 10% { opacity: 1; } to { transform: translateY(-10px); opacity: 0; } }
+
+        .card {
+            position: relative; z-index: 10;
+            background: rgba(255,255,255,0.04);
+            backdrop-filter: blur(30px);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 28px;
+            padding: 56px 48px;
+            width: 100%; max-width: 440px;
+            box-shadow: 0 40px 100px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.1);
+            color: #fff; text-align: center;
+            animation: slideUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(40px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
+
+        .logo-ring {
+            width: 80px; height: 80px; margin: 0 auto 24px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #00c9a7, #1a6bff);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 2rem;
+            box-shadow: 0 0 40px rgba(0,201,167,0.5), 0 0 80px rgba(0,201,167,0.2);
+            animation: pulse-glow 3s infinite;
+        }
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 40px rgba(0,201,167,0.5), 0 0 80px rgba(0,201,167,0.2); }
+            50% { box-shadow: 0 0 60px rgba(0,201,167,0.8), 0 0 120px rgba(0,201,167,0.35); }
+        }
+        h1 { font-size: 2rem; font-weight: 800; letter-spacing: -0.5px; background: linear-gradient(90deg, #fff, #6ee7d0); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        p.sub { color: rgba(255,255,255,0.4); margin: 8px 0 36px; font-size: 0.88rem; }
+
+        .form-group { text-align: left; margin-bottom: 20px; }
+        label { font-size: 0.78rem; font-weight: 600; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.8px; display: block; margin-bottom: 8px; }
+        .input-wrap { position: relative; }
+        .input-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 1rem; opacity: 0.4; }
+        input {
+            width: 100%; padding: 14px 16px 14px 42px;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 14px; color: #fff;
+            font-size: 0.95rem; font-family: 'Inter', sans-serif; outline: none; transition: all 0.3s;
+        }
+        input::placeholder { color: rgba(255,255,255,0.25); }
+        input:focus { border-color: #00c9a7; background: rgba(0,201,167,0.1); box-shadow: 0 0 0 4px rgba(0,201,167,0.15); }
+
+        .password-strength { margin-top: 8px; height: 4px; border-radius: 4px; background: rgba(255,255,255,0.08); overflow: hidden; }
+        .password-strength-bar { height: 100%; border-radius: 4px; width: 0; transition: width 0.4s, background 0.4s; }
+
+        .btn {
+            width: 100%; padding: 15px;
+            background: linear-gradient(135deg, #00c9a7, #1a6bff);
+            color: white; border: none; border-radius: 14px;
+            font-size: 1rem; font-weight: 700; font-family: 'Inter', sans-serif;
+            cursor: pointer; transition: all 0.3s; margin-top: 8px;
+            position: relative; overflow: hidden; letter-spacing: 0.3px;
+        }
+        .btn::before { content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent); transition: left 0.5s; }
+        .btn:hover::before { left: 100%; }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 12px 35px rgba(0,201,167,0.5); }
+        .btn:active { transform: translateY(0); }
+
+        .alert { padding: 12px 16px; border-radius: 12px; margin-bottom: 24px; font-size: 0.88rem; font-weight: 500; }
+        .alert-danger { background: rgba(255,60,80,0.15); border: 1px solid rgba(255,60,80,0.3); color: #ff8090; animation: shake 0.4s; }
+        @keyframes shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-8px); } 75% { transform: translateX(8px); } }
+
+        .perks { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 24px 0; }
+        .perk { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07); border-radius: 12px; padding: 12px; font-size: 0.8rem; color: rgba(255,255,255,0.5); text-align: left; }
+        .perk strong { display: block; color: rgba(255,255,255,0.8); font-size: 0.82rem; margin-bottom: 2px; }
+
+        .link-row { margin-top: 20px; color: rgba(255,255,255,0.4); font-size: 0.88rem; }
+        .link-row a { color: #6ee7d0; text-decoration: none; font-weight: 600; }
+        .link-row a:hover { color: #a7f3e4; }
+    </style>
+</head>
+<body>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="particles" id="particles"></div>
+
+    <div class="card">
+        <div class="logo-ring">✨</div>
+        <h1>Create Account</h1>
+        <p class="sub">Join CryptoVault — your files, encrypted forever</p>
+
+        <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
+
+        <form th:action="@{/register}" method="post">
+            <div class="form-group">
+                <label>Username</label>
+                <div class="input-wrap">
+                    <span class="input-icon">👤</span>
+                    <input type="text" name="username" id="username" placeholder="Choose a username" required>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <div class="input-wrap">
+                    <span class="input-icon">🔑</span>
+                    <input type="password" name="password" id="password" placeholder="Choose a strong password" required oninput="updateStrength(this.value)">
+                </div>
+                <div class="password-strength"><div class="password-strength-bar" id="strengthBar"></div></div>
+            </div>
+            <button type="submit" class="btn">Create Account →</button>
+        </form>
+
+        <div class="perks">
+            <div class="perk"><strong>🔐 AES-128</strong>Military-grade encryption</div>
+            <div class="perk"><strong>🛡️ BCrypt</strong>Passwords hashed securely</div>
+            <div class="perk"><strong>📁 Private</strong>Only you see your files</div>
+            <div class="perk"><strong>⚡ Fast</strong>Instant encrypt & decrypt</div>
+        </div>
+
+        <div class="link-row">Already have an account? <a href="/login">Sign in here</a></div>
+    </div>
+    <script>
+        const container = document.getElementById('particles');
+        for (let i = 0; i < 50; i++) {
+            const p = document.createElement('div');
+            p.className = 'particle';
+            p.style.left = Math.random() * 100 + 'vw';
+            p.style.bottom = '-10px';
+            p.style.width = p.style.height = (1 + Math.random() * 3) + 'px';
+            p.style.background = `hsl(${160 + Math.random()*60}, 80%, 70%)`;
+            p.style.animationDuration = (6 + Math.random() * 14) + 's';
+            p.style.animationDelay = (Math.random() * 12) + 's';
+            container.appendChild(p);
+        }
+        function updateStrength(val) {
+            const bar = document.getElementById('strengthBar');
+            let strength = 0;
+            if (val.length >= 6) strength++;
+            if (val.length >= 10) strength++;
+            if (/[A-Z]/.test(val)) strength++;
+            if (/[0-9]/.test(val)) strength++;
+            if (/[^A-Za-z0-9]/.test(val)) strength++;
+            const colors = ['#ff4444','#ff8800','#ffcc00','#88dd00','#00c9a7'];
+            const widths = ['20%','40%','60%','80%','100%'];
+            bar.style.width = val ? widths[strength-1] || '10%' : '0';
+            bar.style.background = val ? colors[strength-1] || '#ff4444' : 'transparent';
+        }
+    </script>
+</body>
+</html>

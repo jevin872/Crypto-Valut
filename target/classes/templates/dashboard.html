@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>CryptoVault – Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            min-height: 100vh;
+            background: #08080f;
+            font-family: 'Inter', sans-serif;
+            color: #fff;
+        }
+
+        /* Subtle animated background grid */
+        body::before {
+            content: '';
+            position: fixed; inset: 0;
+            background-image:
+                linear-gradient(rgba(108,71,255,0.04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(108,71,255,0.04) 1px, transparent 1px);
+            background-size: 50px 50px;
+            pointer-events: none;
+            animation: grid-move 20s linear infinite;
+        }
+        @keyframes grid-move { to { background-position: 50px 50px; } }
+
+        /* Glowing orbs */
+        .orb { position: fixed; border-radius: 50%; filter: blur(100px); opacity: 0.12; pointer-events: none; animation: drift 12s ease-in-out infinite; }
+        .orb-1 { width: 600px; height: 600px; background: #6c47ff; top: -200px; left: -200px; }
+        .orb-2 { width: 400px; height: 400px; background: #ff47a3; bottom: -150px; right: -150px; animation-delay: -6s; }
+        @keyframes drift { 0%,100% { transform: translate(0,0); } 50% { transform: translate(40px, -40px); } }
+
+        /* ─── NAVBAR ─── */
+        nav {
+            position: sticky; top: 0; z-index: 100;
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 14px 40px;
+            background: rgba(8,8,15,0.8);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .nav-brand { font-size: 1.3rem; font-weight: 800; display: flex; align-items: center; gap: 10px; }
+        .nav-brand .icon { 
+            width: 36px; height: 36px; border-radius: 10px;
+            background: linear-gradient(135deg, #6c47ff, #ff47a3);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1rem;
+            box-shadow: 0 0 20px rgba(108,71,255,0.5);
+        }
+        .brand-text { background: linear-gradient(90deg, #fff, #c4b5fd); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+
+        .nav-right { display: flex; align-items: center; gap: 12px; }
+        .nav-user { display: flex; align-items: center; gap: 8px; padding: 6px 14px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; font-size: 0.85rem; }
+        .avatar { width: 24px; height: 24px; border-radius: 50%; background: linear-gradient(135deg, #6c47ff, #ff47a3); display: flex; align-items: center; justify-content: center; font-size: 0.65rem; font-weight: 700; }
+
+        .badge { padding: 3px 10px; border-radius: 20px; font-size: 0.72rem; font-weight: 700; }
+        .badge-user { background: rgba(108,71,255,0.2); border: 1px solid rgba(108,71,255,0.4); color: #a78bfa; }
+        .badge-admin { background: rgba(255,215,0,0.15); border: 1px solid rgba(255,215,0,0.4); color: #ffd200; }
+
+        .nav-btn {
+            padding: 7px 16px; border-radius: 10px; font-size: 0.82rem; font-weight: 600;
+            text-decoration: none; transition: all 0.2s; border: 1px solid transparent;
+            font-family: 'Inter', sans-serif; cursor: pointer; background: none;
+        }
+        .nav-btn-ghost { color: rgba(255,255,255,0.5); border-color: rgba(255,255,255,0.08); }
+        .nav-btn-ghost:hover { background: rgba(255,255,255,0.06); color: #fff; }
+        .nav-btn-admin { color: #ffd200; border-color: rgba(255,215,0,0.3); }
+        .nav-btn-admin:hover { background: rgba(255,215,0,0.1); }
+
+        /* ─── MAIN ─── */
+        .container { max-width: 980px; margin: 0 auto; padding: 50px 24px; }
+
+        .page-header { margin-bottom: 40px; }
+        .page-header h2 { font-size: 2.2rem; font-weight: 800; letter-spacing: -1px; }
+        .page-header h2 span { background: linear-gradient(90deg, #6c47ff, #ff47a3); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .page-header p { color: rgba(255,255,255,0.35); margin-top: 6px; font-size: 0.92rem; }
+
+        /* Stats row */
+        .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 32px; }
+        .stat-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 16px; padding: 20px 24px;
+            display: flex; align-items: center; gap: 16px;
+            transition: transform 0.2s, border-color 0.2s;
+        }
+        .stat-card:hover { transform: translateY(-3px); border-color: rgba(108,71,255,0.3); }
+        .stat-icon { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink:0; }
+        .stat-icon-purple { background: rgba(108,71,255,0.15); }
+        .stat-icon-pink { background: rgba(255,71,163,0.15); }
+        .stat-icon-teal { background: rgba(0,201,167,0.15); }
+        .stat-info .num { font-size: 1.6rem; font-weight: 800; }
+        .stat-info .label { font-size: 0.78rem; color: rgba(255,255,255,0.35); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        /* Panels */
+        .panel {
+            background: rgba(255,255,255,0.025);
+            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 20px; padding: 28px 32px;
+            margin-bottom: 24px;
+            transition: border-color 0.3s;
+        }
+        .panel:hover { border-color: rgba(108,71,255,0.2); }
+        .panel-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+        .panel-title { font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: rgba(255,255,255,0.35); }
+
+        /* Upload zone */
+        .upload-area {
+            border: 2px dashed rgba(108,71,255,0.3);
+            border-radius: 16px; padding: 32px;
+            text-align: center;
+            transition: all 0.3s; cursor: pointer;
+            background: rgba(108,71,255,0.03);
+        }
+        .upload-area:hover, .upload-area.drag-over {
+            border-color: #6c47ff;
+            background: rgba(108,71,255,0.08);
+        }
+        .upload-area .upload-icon { font-size: 2.5rem; margin-bottom: 12px; }
+        .upload-area p { color: rgba(255,255,255,0.4); font-size: 0.88rem; margin-bottom: 16px; }
+        .upload-area p strong { color: rgba(255,255,255,0.8); }
+
+        input[type="file"] {
+            display: none;
+        }
+        .file-label {
+            display: inline-block; padding: 10px 24px;
+            background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 10px; font-size: 0.88rem; color: rgba(255,255,255,0.6);
+            cursor: pointer; transition: all 0.2s; margin-bottom: 16px;
+        }
+        .file-label:hover { background: rgba(255,255,255,0.1); color: #fff; }
+
+        .btn-upload {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 12px 28px;
+            background: linear-gradient(135deg, #6c47ff, #9d6fff);
+            color: white; border: none; border-radius: 12px;
+            font-size: 0.92rem; font-weight: 700; font-family: 'Inter', sans-serif;
+            cursor: pointer; transition: all 0.3s;
+            position: relative; overflow: hidden;
+        }
+        .btn-upload::before { content:''; position:absolute; top:0; left:-100%; width:100%; height:100%; background:linear-gradient(90deg,transparent,rgba(255,255,255,0.15),transparent); transition:left 0.5s; }
+        .btn-upload:hover::before { left:100%; }
+        .btn-upload:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(108,71,255,0.5); }
+
+        .status {
+            margin-top: 16px; padding: 12px 18px;
+            border-radius: 12px; font-size: 0.88rem; font-weight: 500;
+            display: none;
+        }
+        .status.success { background: rgba(0,201,167,0.12); border: 1px solid rgba(0,201,167,0.3); color: #6ee7d0; display: block; }
+        .status.error { background: rgba(255,60,80,0.12); border: 1px solid rgba(255,60,80,0.3); color: #ff8090; display: block; }
+
+        /* Files table */
+        .table-wrap { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; }
+        th {
+            text-align: left; padding: 12px 16px;
+            font-size: 0.72rem; font-weight: 600; letter-spacing: 0.8px;
+            text-transform: uppercase; color: rgba(255,255,255,0.3);
+            border-bottom: 1px solid rgba(255,255,255,0.07);
+        }
+        td { padding: 14px 16px; font-size: 0.88rem; border-bottom: 1px solid rgba(255,255,255,0.04); transition: background 0.15s; }
+        tr:hover td { background: rgba(108,71,255,0.04); }
+        tr:last-child td { border-bottom: none; }
+
+        .file-name-cell { display: flex; align-items: center; gap: 10px; }
+        .file-icon { width: 32px; height: 32px; border-radius: 8px; background: rgba(108,71,255,0.15); display: flex; align-items: center; justify-content: center; font-size: 0.9rem; flex-shrink:0; }
+        .file-name { font-weight: 500; }
+        .file-size { color: rgba(255,255,255,0.35); }
+
+        .btn-dl {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 6px 16px; border: none; border-radius: 8px;
+            background: rgba(0,201,167,0.12); border: 1px solid rgba(0,201,167,0.25);
+            color: #6ee7d0; font-size: 0.8rem; font-weight: 600;
+            font-family: 'Inter', sans-serif; cursor: pointer; transition: all 0.2s;
+        }
+        .btn-dl:hover { background: rgba(0,201,167,0.2); transform: translateY(-1px); }
+
+        .empty-state { padding: 48px; text-align: center; }
+        .empty-state .empty-icon { font-size: 3rem; margin-bottom: 16px; opacity: 0.3; }
+        .empty-state p { color: rgba(255,255,255,0.25); font-size: 0.9rem; }
+
+        .progress-bar { height: 3px; background: rgba(255,255,255,0.08); border-radius: 3px; overflow: hidden; margin-top: 12px; display: none; }
+        .progress-bar.active { display: block; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, #6c47ff, #ff47a3); border-radius: 3px; animation: indeterminate 1.5s ease-in-out infinite; }
+        @keyframes indeterminate { 0% { width: 0; margin-left: 0; } 50% { width: 70%; margin-left: 15%; } 100% { width: 0; margin-left: 100%; } }
+
+        @media (max-width: 640px) {
+            nav { padding: 14px 20px; }
+            .container { padding: 30px 16px; }
+            .stats-row { grid-template-columns: 1fr; }
+            .panel { padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+
+    <nav>
+        <div class="nav-brand">
+            <div class="icon">🔒</div>
+            <span class="brand-text">CryptoVault</span>
+        </div>
+        <div class="nav-right">
+            <div class="nav-user">
+                <div class="avatar" th:text="${username.substring(0,1).toUpperCase()}">U</div>
+                <span th:text="${username}" style="font-size:0.85rem; color:rgba(255,255,255,0.7);"></span>
+            </div>
+            <span class="badge badge-user" th:if="${!isAdmin}">USER</span>
+            <span class="badge badge-admin" th:if="${isAdmin}">⭐ ADMIN</span>
+            <a href="/admin" class="nav-btn nav-btn-admin" th:if="${isAdmin}">Admin Panel</a>
+            <form th:action="@{/logout}" method="post" style="margin:0;">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                <button type="submit" class="nav-btn nav-btn-ghost" style="background:none;cursor:pointer;font-family:inherit;">Sign out</button>
+            </form>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="page-header">
+            <h2>My <span>Vault</span></h2>
+            <p>All your files are encrypted with AES-128 before being stored on disk.</p>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-row">
+            <div class="stat-card">
+                <div class="stat-icon stat-icon-purple">📁</div>
+                <div class="stat-info">
+                    <div class="num" th:text="${files.size()}">0</div>
+                    <div class="label">Files Stored</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon stat-icon-pink">🔐</div>
+                <div class="stat-info">
+                    <div class="num">AES</div>
+                    <div class="label">Encryption</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon stat-icon-teal">✅</div>
+                <div class="stat-info">
+                    <div class="num">100%</div>
+                    <div class="label">Private</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Upload Panel -->
+        <div class="panel">
+            <div class="panel-header">
+                <span class="panel-title">🔐 Encrypt &amp; Upload</span>
+            </div>
+            <div class="upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()" ondragover="handleDrag(event, true)" ondragleave="handleDrag(event, false)" ondrop="handleDrop(event)">
+                <div class="upload-icon">☁️</div>
+                <p><strong>Click to choose</strong> or drag &amp; drop a file</p>
+                <p id="fileName" style="color: #a78bfa; font-size:0.85rem; display:none;"></p>
+                <input type="file" id="fileInput" onchange="fileSelected(this)">
+            </div>
+            <div style="text-align:center; margin-top:16px;">
+                <button class="btn-upload" id="uploadBtn" onclick="uploadFile()" disabled style="opacity:0.4; cursor:not-allowed;">
+                    🔒 Encrypt &amp; Upload
+                </button>
+            </div>
+            <div class="progress-bar" id="progressBar"><div class="progress-fill"></div></div>
+            <div id="uploadStatus" class="status"></div>
+        </div>
+
+        <!-- Files Panel -->
+        <div class="panel">
+            <div class="panel-header">
+                <span class="panel-title">📂 My Encrypted Files</span>
+            </div>
+            <div class="table-wrap" th:if="${!files.isEmpty()}">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>File</th>
+                            <th>Size</th>
+                            <th>Uploaded</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="file : ${files}">
+                            <td>
+                                <div class="file-name-cell">
+                                    <div class="file-icon">📄</div>
+                                    <div class="file-name" th:text="${file.fileName}"></div>
+                                </div>
+                            </td>
+                            <td class="file-size" th:text="${file.fileSize} + ' B'"></td>
+                            <td style="color:rgba(255,255,255,0.4);" th:text="${#temporals.format(file.uploadTime,'dd MMM yyyy, HH:mm')}"></td>
+                            <td>
+                                <button class="btn-dl" th:onclick="'downloadFile(' + ${file.id} + ')'">
+                                    ⬇ Decrypt &amp; Download
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="empty-state" th:if="${files.isEmpty()}">
+                <div class="empty-icon">🗂️</div>
+                <p>No files yet — upload your first encrypted file above!</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let selectedFile = null;
+
+        function fileSelected(input) {
+            if (input.files.length > 0) {
+                selectedFile = input.files[0];
+                document.getElementById('fileName').textContent = '📎 ' + selectedFile.name;
+                document.getElementById('fileName').style.display = 'block';
+                const btn = document.getElementById('uploadBtn');
+                btn.disabled = false;
+                btn.style.opacity = '1';
+                btn.style.cursor = 'pointer';
+            }
+        }
+
+        function handleDrag(e, over) {
+            e.preventDefault();
+            document.getElementById('uploadArea').style.borderColor = over ? '#6c47ff' : 'rgba(108,71,255,0.3)';
+            document.getElementById('uploadArea').style.background = over ? 'rgba(108,71,255,0.1)' : 'rgba(108,71,255,0.03)';
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            handleDrag(e, false);
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                const dt = new DataTransfer();
+                dt.items.add(files[0]);
+                document.getElementById('fileInput').files = dt.files;
+                fileSelected(document.getElementById('fileInput'));
+            }
+        }
+
+        async function uploadFile() {
+            if (!selectedFile) return;
+            const status = document.getElementById('uploadStatus');
+            const progress = document.getElementById('progressBar');
+            status.className = 'status';
+            progress.classList.add('active');
+
+            const form = new FormData();
+            form.append('file', selectedFile);
+            try {
+                const resp = await fetch('/api/files/upload', { method: 'POST', body: form });
+                const data = await resp.json();
+                progress.classList.remove('active');
+                if (resp.ok) {
+                    status.textContent = `✅ File encrypted & uploaded! ID: ${data.fileId}. Refresh the page to see it below.`;
+                    status.className = 'status success';
+                    selectedFile = null;
+                    document.getElementById('fileName').style.display = 'none';
+                    const btn = document.getElementById('uploadBtn');
+                    btn.disabled = true; btn.style.opacity = '0.4'; btn.style.cursor = 'not-allowed';
+                } else {
+                    status.textContent = `❌ ${data.error || data.message}`;
+                    status.className = 'status error';
+                }
+            } catch (e) {
+                progress.classList.remove('active');
+                status.textContent = '❌ Server error. Please try again.';
+                status.className = 'status error';
+            }
+        }
+
+        function downloadFile(id) {
+            window.location.href = `/api/files/download/${id}`;
+        }
+    </script>
+</body>
+</html>
