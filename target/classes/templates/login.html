@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <title>CryptoVault – Login</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- CSRF Protection -->
+    <meta th:if="${_csrf}" name="_csrf" th:content="${_csrf.token}"/>
+    <meta th:if="${_csrf}" name="_csrf_header" th:content="${_csrf.headerName}"/>
     <style>
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -208,19 +211,12 @@
         </div>
     </div>
 
+    <script src="/js/security.js"></script>
+    <script src="/js/particles.js"></script>
+    <script src="/js/auth.js"></script>
     <script>
-        // Generate floating particles
-        const container = document.getElementById('particles');
-        for (let i = 0; i < 60; i++) {
-            const p = document.createElement('div');
-            p.className = 'particle';
-            p.style.left = Math.random() * 100 + 'vw';
-            p.style.animationDuration = (6 + Math.random() * 14) + 's';
-            p.style.animationDelay = (Math.random() * 12) + 's';
-            p.style.width = p.style.height = (1 + Math.random() * 3) + 'px';
-            p.style.opacity = Math.random() * 0.7;
-            container.appendChild(p);
-        }
+        // Initialize background particles
+        ParticleEngine.init('particles', { count: 60, minDuration: 8, maxDuration: 15 });
     </script>
 </body>
 </html>

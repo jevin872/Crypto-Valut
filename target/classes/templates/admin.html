@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <title>CryptoVault – Admin Panel</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <meta th:if="${_csrf}" name="_csrf" th:content="${_csrf.token}"/>
+    <meta th:if="${_csrf}" name="_csrf_header" th:content="${_csrf.headerName}"/>
     <style>
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -277,5 +279,8 @@
     <footer class="page-footer">
         <p>⭐ <span>CryptoVault Admin</span> &nbsp;·&nbsp; Built with Spring Boot &amp; AES-128 &nbsp;·&nbsp; Designed by <span>Jevin</span> &nbsp;·&nbsp; 2026</p>
     </footer>
+    <script src="/js/utils.js"></script>
+    <script src="/js/security.js"></script>
+    <script src="/js/admin.js"></script>
 </body>
 </html>

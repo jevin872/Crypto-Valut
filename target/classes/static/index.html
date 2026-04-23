@@ -502,30 +502,27 @@
         </div>
     </footer>
 
+    <script src="/js/ui.js"></script>
     <script>
-        // Generate twinkling stars
+        // Generate twinkling stars (still inline as it's highly dynamic/DOM intensive)
         const starsEl = document.getElementById('stars');
-        for (let i = 0; i < 120; i++) {
-            const s = document.createElement('div');
-            s.className = 'star';
-            const size = Math.random() * 2.5 + 0.5;
-            s.style.cssText = `
-                left: ${Math.random()*100}vw;
-                top: ${Math.random()*100}vh;
-                width: ${size}px;
-                height: ${size}px;
-                opacity: ${Math.random()*0.5 + 0.1};
-                animation-duration: ${3 + Math.random()*6}s;
-                animation-delay: ${Math.random()*6}s;
-            `;
-            starsEl.appendChild(s);
+        if (starsEl) {
+            for (let i = 0; i < 120; i++) {
+                const s = document.createElement('div');
+                s.className = 'star';
+                const size = Math.random() * 2.5 + 0.5;
+                s.style.cssText = `
+                    left: ${Math.random()*100}vw;
+                    top: ${Math.random()*100}vh;
+                    width: ${size}px;
+                    height: ${size}px;
+                    opacity: ${Math.random()*0.5 + 0.1};
+                    animation-duration: ${3 + Math.random()*6}s;
+                    animation-delay: ${Math.random()*6}s;
+                `;
+                starsEl.appendChild(s);
+            }
         }
-
-        // Smooth navbar shrink on scroll
-        window.addEventListener('scroll', () => {
-            const nav = document.querySelector('nav');
-            nav.style.padding = window.scrollY > 40 ? '10px 60px' : '16px 60px';
-        });
     </script>
 </body>
 </html>

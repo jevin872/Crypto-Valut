@@ -1,0 +1,929 @@
+# CryptoVault – Complete Source Code
+
+**Project:** CryptoVault: Secure File Storage System with AES Encryption
+**Framework:** Spring Boot 3.2.3 | Java 17 | AES-128 Encryption
+**Author:** Jevin
+
+---
+
+## Table of Contents
+1. pom.xml
+2. application.properties
+3. CryptoVaultApplication.java
+4. SecurityConfig.java
+5. DataInitializer.java
+6. User.java
+7. FileMetadata.java
+8. UserRepository.java
+9. FileMetadataRepository.java
+10. UserService.java
+11. FileService.java
+12. AESUtils.java
+13. FileStorageException.java
+14. GlobalExceptionHandler.java
+15. AuthController.java
+16. FileController.java
+17. index.html
+18. login.html
+19. register.html
+20. dashboard.html
+21. admin.html
+22. AESUtilsTest.java
+
+---
+
+## 1. pom.xml
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.2.3</version>
+        <relativePath/>
+    </parent>
+    <groupId>com.cryptovault</groupId>
+    <artifactId>crypto-vault</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <name>CryptoVault: Secure File Storage System with AES Encryption</name>
+    <description>Spring Boot project for secure file storage with AES encryption</description>
+    <properties>
+        <java.version>17</java.version>
+    </properties>
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-thymeleaf</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.thymeleaf.extras</groupId>
+            <artifactId>thymeleaf-extras-springsecurity6</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+</project>
+```
+
+---
+
+## 2. application.properties
+Path: src/main/resources/application.properties
+
+```properties
+spring.application.name=crypto-vault
+spring.datasource.url=jdbc:h2:mem:cryptovault_db
+spring.datasource.driverClassName=org.h2.Driver
+spring.datasource.username=sa
+spring.datasource.password=password
+
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.show-sql=true
+spring.jpa.properties.hibernate.format_sql=true
+
+spring.servlet.multipart.max-file-size=10MB
+spring.servlet.multipart.max-request-size=10MB
+
+file.upload-dir=./uploads
+```
+
+---
+
+## 3. CryptoVaultApplication.java
+Path: src/main/java/com/cryptovault/CryptoVaultApplication.java
+
+```java
+package com.cryptovault;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+public class CryptoVaultApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(CryptoVaultApplication.class, args);
+        System.out.println("-----------------------------------------------------------");
+        System.out.println("CryptoVault: Secure File Storage System is running...");
+        System.out.println("-----------------------------------------------------------");
+    }
+}
+```
+
+---
+
+## 4. SecurityConfig.java
+Path: src/main/java/com/cryptovault/config/SecurityConfig.java
+
+```java
+package com.cryptovault.config;
+
+import com.cryptovault.service.UserService;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.web.SecurityFilterChain;
+
+@Configuration
+@EnableWebSecurity
+public class SecurityConfig {
+
+    @Bean
+    public BCryptPasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    public DaoAuthenticationProvider authProvider(UserService userService) {
+        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
+        provider.setUserDetailsService(userService);
+        provider.setPasswordEncoder(passwordEncoder());
+        return provider;
+    }
+
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        http
+            .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/", "/register", "/login", "/css/**", "/js/**").permitAll()
+                .requestMatchers("/admin/**").hasRole("ADMIN")
+                .anyRequest().authenticated()
+            )
+            .formLogin(form -> form
+                .loginPage("/login")
+                .defaultSuccessUrl("/dashboard", true)
+                .failureUrl("/login?error=true")
+                .permitAll()
+            )
+            .logout(logout -> logout
+                .logoutSuccessUrl("/login?logout=true")
+                .permitAll()
+            )
+            .csrf(csrf -> csrf.ignoringRequestMatchers("/api/**"));
+        return http.build();
+    }
+}
+```
+
+---
+
+## 5. DataInitializer.java
+Path: src/main/java/com/cryptovault/config/DataInitializer.java
+
+```java
+package com.cryptovault.config;
+
+import com.cryptovault.entity.User;
+import com.cryptovault.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.stereotype.Component;
+
+@Component
+public class DataInitializer implements CommandLineRunner {
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private BCryptPasswordEncoder passwordEncoder;
+
+    @Override
+    public void run(String... args) {
+        if (!userRepository.existsByUsername("admin")) {
+            User admin = new User("admin", passwordEncoder.encode("admin123"), "ROLE_ADMIN");
+            userRepository.save(admin);
+            System.out.println(">>> Default admin created: username=admin, password=admin123");
+        }
+    }
+}
+```
+
+---
+
+## 6. User.java
+Path: src/main/java/com/cryptovault/entity/User.java
+
+```java
+package com.cryptovault.entity;
+
+import jakarta.persistence.*;
+
+@Entity
+@Table(name = "users")
+public class User {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(unique = true, nullable = false)
+    private String username;
+
+    @Column(nullable = false)
+    private String password;
+
+    @Column(nullable = false)
+    private String role;
+
+    public User() {}
+
+    public User(String username, String password, String role) {
+        this.username = username;
+        this.password = password;
+        this.role = role;
+    }
+
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+    public String getUsername() { return username; }
+    public void setUsername(String username) { this.username = username; }
+    public String getPassword() { return password; }
+    public void setPassword(String password) { this.password = password; }
+    public String getRole() { return role; }
+    public void setRole(String role) { this.role = role; }
+}
+```
+
+---
+
+## 7. FileMetadata.java
+Path: src/main/java/com/cryptovault/entity/FileMetadata.java
+
+```java
+package com.cryptovault.entity;
+
+import jakarta.persistence.*;
+import java.time.LocalDateTime;
+
+@Entity
+@Table(name = "file_metadata")
+public class FileMetadata {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(name = "file_name", nullable = false)
+    private String fileName;
+
+    @Column(name = "file_path", nullable = false)
+    private String filePath;
+
+    @Column(name = "file_size", nullable = false)
+    private Long fileSize;
+
+    @Column(name = "upload_time", nullable = false)
+    private LocalDateTime uploadTime;
+
+    @Column(name = "uploaded_by")
+    private String uploadedBy;
+
+    public FileMetadata() {}
+
+    public FileMetadata(String fileName, String filePath, Long fileSize, LocalDateTime uploadTime) {
+        this.fileName = fileName;
+        this.filePath = filePath;
+        this.fileSize = fileSize;
+        this.uploadTime = uploadTime;
+    }
+
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+    public String getFileName() { return fileName; }
+    public void setFileName(String fileName) { this.fileName = fileName; }
+    public String getFilePath() { return filePath; }
+    public void setFilePath(String filePath) { this.filePath = filePath; }
+    public Long getFileSize() { return fileSize; }
+    public void setFileSize(Long fileSize) { this.fileSize = fileSize; }
+    public LocalDateTime getUploadTime() { return uploadTime; }
+    public void setUploadTime(LocalDateTime uploadTime) { this.uploadTime = uploadTime; }
+    public String getUploadedBy() { return uploadedBy; }
+    public void setUploadedBy(String uploadedBy) { this.uploadedBy = uploadedBy; }
+}
+```
+
+---
+
+## 8. UserRepository.java
+Path: src/main/java/com/cryptovault/repository/UserRepository.java
+
+```java
+package com.cryptovault.repository;
+
+import com.cryptovault.entity.User;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+import java.util.Optional;
+
+@Repository
+public interface UserRepository extends JpaRepository<User, Long> {
+    Optional<User> findByUsername(String username);
+    boolean existsByUsername(String username);
+}
+```
+
+---
+
+## 9. FileMetadataRepository.java
+Path: src/main/java/com/cryptovault/repository/FileMetadataRepository.java
+
+```java
+package com.cryptovault.repository;
+
+import com.cryptovault.entity.FileMetadata;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+import java.util.List;
+
+@Repository
+public interface FileMetadataRepository extends JpaRepository<FileMetadata, Long> {
+    List<FileMetadata> findByUploadedBy(String username);
+}
+```
+
+---
+
+## 10. UserService.java
+Path: src/main/java/com/cryptovault/service/UserService.java
+
+```java
+package com.cryptovault.service;
+
+import com.cryptovault.entity.User;
+import com.cryptovault.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.*;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.stereotype.Service;
+import java.util.Collections;
+import java.util.List;
+
+@Service
+public class UserService implements UserDetailsService {
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private BCryptPasswordEncoder passwordEncoder;
+
+    @Override
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
+        return new org.springframework.security.core.userdetails.User(
+                user.getUsername(),
+                user.getPassword(),
+                Collections.singletonList(new SimpleGrantedAuthority(user.getRole()))
+        );
+    }
+
+    public User registerUser(String username, String rawPassword) {
+        if (userRepository.existsByUsername(username)) {
+            throw new RuntimeException("Username already taken!");
+        }
+        User user = new User(username, passwordEncoder.encode(rawPassword), "ROLE_USER");
+        return userRepository.save(user);
+    }
+
+    public List<User> getAllUsers() { return userRepository.findAll(); }
+    public long getUserCount() { return userRepository.count(); }
+}
+```
+
+---
+
+## 11. FileService.java
+Path: src/main/java/com/cryptovault/service/FileService.java
+
+```java
+package com.cryptovault.service;
+
+import com.cryptovault.entity.FileMetadata;
+import com.cryptovault.exception.FileStorageException;
+import com.cryptovault.repository.FileMetadataRepository;
+import com.cryptovault.util.AESUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+import java.io.IOException;
+import java.nio.file.*;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.UUID;
+
+@Service
+public class FileService {
+
+    @Autowired
+    private FileMetadataRepository fileRepository;
+
+    @Value("${file.upload-dir}")
+    private String uploadDir;
+
+    public FileMetadata storeFile(MultipartFile file) throws Exception {
+        if (file.isEmpty()) throw new FileStorageException("Failed to store empty file.");
+        try {
+            byte[] encryptedBytes = AESUtils.encrypt(file.getBytes());
+            Path targetPath = Paths.get(uploadDir).toAbsolutePath().normalize();
+            if (!Files.exists(targetPath)) Files.createDirectories(targetPath);
+
+            String storedFileName = UUID.randomUUID().toString() + ".enc";
+            Path filePath = targetPath.resolve(storedFileName);
+            Files.write(filePath, encryptedBytes);
+
+            String username = SecurityContextHolder.getContext().getAuthentication().getName();
+            FileMetadata metadata = new FileMetadata(
+                    file.getOriginalFilename(), filePath.toString(), file.getSize(), LocalDateTime.now());
+            metadata.setUploadedBy(username);
+            return fileRepository.save(metadata);
+        } catch (IOException e) {
+            throw new FileStorageException("Could not store file " + file.getOriginalFilename(), e);
+        }
+    }
+
+    public DecryptedFile getFile(Long id) throws Exception {
+        String currentUser = SecurityContextHolder.getContext().getAuthentication().getName();
+        boolean isAdmin = SecurityContextHolder.getContext().getAuthentication()
+                .getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+
+        FileMetadata metadata = fileRepository.findById(id)
+                .orElseThrow(() -> new FileStorageException("File not found with id: " + id));
+
+        if (!isAdmin && !metadata.getUploadedBy().equals(currentUser))
+            throw new FileStorageException("Access denied. You do not own this file.");
+
+        try {
+            byte[] decryptedBytes = AESUtils.decrypt(Files.readAllBytes(Paths.get(metadata.getFilePath())));
+            return new DecryptedFile(metadata.getFileName(), decryptedBytes);
+        } catch (IOException e) {
+            throw new FileStorageException("Could not read file for id: " + id, e);
+        }
+    }
+
+    public List<FileMetadata> getFilesForUser(String username) { return fileRepository.findByUploadedBy(username); }
+    public List<FileMetadata> getAllFiles() { return fileRepository.findAll(); }
+    public long getTotalFileCount() { return fileRepository.count(); }
+
+    public static class DecryptedFile {
+        private final String fileName;
+        private final byte[] content;
+        public DecryptedFile(String fileName, byte[] content) {
+            this.fileName = fileName;
+            this.content = content;
+        }
+        public String getFileName() { return fileName; }
+        public byte[] getContent() { return content; }
+    }
+}
+```
+
+---
+
+## 12. AESUtils.java
+Path: src/main/java/com/cryptovault/util/AESUtils.java
+
+```java
+package com.cryptovault.util;
+
+import javax.crypto.Cipher;
+import javax.crypto.spec.SecretKeySpec;
+import java.nio.charset.StandardCharsets;
+
+public class AESUtils {
+
+    private static final String ALGORITHM = "AES";
+    private static final String SECRET_KEY = "CryptoVaultKey12"; // 16 chars = AES-128
+
+    /**
+     * Encrypts the provided byte array using AES encryption.
+     */
+    public static byte[] encrypt(byte[] data) throws Exception {
+        SecretKeySpec keySpec = new SecretKeySpec(SECRET_KEY.getBytes(StandardCharsets.UTF_8), ALGORITHM);
+        Cipher cipher = Cipher.getInstance(ALGORITHM);
+        cipher.init(Cipher.ENCRYPT_MODE, keySpec);
+        return cipher.doFinal(data);
+    }
+
+    /**
+     * Decrypts the provided encrypted byte array using AES decryption.
+     */
+    public static byte[] decrypt(byte[] encryptedData) throws Exception {
+        SecretKeySpec keySpec = new SecretKeySpec(SECRET_KEY.getBytes(StandardCharsets.UTF_8), ALGORITHM);
+        Cipher cipher = Cipher.getInstance(ALGORITHM);
+        cipher.init(Cipher.DECRYPT_MODE, keySpec);
+        return cipher.doFinal(encryptedData);
+    }
+}
+```
+
+---
+
+## 13. FileStorageException.java
+Path: src/main/java/com/cryptovault/exception/FileStorageException.java
+
+```java
+package com.cryptovault.exception;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.ResponseStatus;
+
+@ResponseStatus(HttpStatus.NOT_FOUND)
+public class FileStorageException extends RuntimeException {
+    public FileStorageException(String message) { super(message); }
+    public FileStorageException(String message, Throwable cause) { super(message, cause); }
+}
+```
+
+---
+
+## 14. GlobalExceptionHandler.java
+Path: src/main/java/com/cryptovault/exception/GlobalExceptionHandler.java
+
+```java
+package com.cryptovault.exception;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.ControllerAdvice;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+@ControllerAdvice
+public class GlobalExceptionHandler {
+
+    @ExceptionHandler(FileStorageException.class)
+    public ResponseEntity<Object> handleFileStorageException(FileStorageException ex) {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("timestamp", LocalDateTime.now());
+        body.put("message", ex.getMessage());
+        body.put("error", "File Storage Error");
+        return new ResponseEntity<>(body, HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<Object> handleGeneralException(Exception ex) {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("timestamp", LocalDateTime.now());
+        body.put("message", "An unexpected error occurred: " + ex.getMessage());
+        body.put("error", "Internal Server Error");
+        return new ResponseEntity<>(body, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+}
+```
+
+---
+
+## 15. AuthController.java
+Path: src/main/java/com/cryptovault/controller/AuthController.java
+
+```java
+package com.cryptovault.controller;
+
+import com.cryptovault.service.FileService;
+import com.cryptovault.service.UserService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.*;
+
+@Controller
+public class AuthController {
+
+    @Autowired
+    private UserService userService;
+
+    @Autowired
+    private FileService fileService;
+
+    @GetMapping("/login")
+    public String loginPage(@RequestParam(name = "error", required = false) String error,
+                            @RequestParam(name = "logout", required = false) String logout,
+                            Model model) {
+        if (error != null) model.addAttribute("error", "Invalid username or password.");
+        if (logout != null) model.addAttribute("message", "You have been logged out safely.");
+        return "login";
+    }
+
+    @GetMapping("/register")
+    public String registerPage() { return "register"; }
+
+    @PostMapping("/register")
+    public String doRegister(@RequestParam(name = "username") String username,
+                             @RequestParam(name = "password") String password,
+                             Model model) {
+        try {
+            userService.registerUser(username, password);
+            return "redirect:/login?registered=true";
+        } catch (RuntimeException e) {
+            model.addAttribute("error", e.getMessage());
+            return "register";
+        }
+    }
+
+    @GetMapping("/dashboard")
+    public String dashboard(Authentication auth, Model model) {
+        String username = auth.getName();
+        boolean isAdmin = auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+        model.addAttribute("username", username);
+        model.addAttribute("isAdmin", isAdmin);
+        model.addAttribute("files", fileService.getFilesForUser(username));
+        return "dashboard";
+    }
+
+    @GetMapping("/admin")
+    public String adminPanel(Model model) {
+        model.addAttribute("users", userService.getAllUsers());
+        model.addAttribute("files", fileService.getAllFiles());
+        model.addAttribute("userCount", userService.getUserCount());
+        model.addAttribute("fileCount", fileService.getTotalFileCount());
+        return "admin";
+    }
+}
+```
+
+---
+
+## 16. FileController.java
+Path: src/main/java/com/cryptovault/controller/FileController.java
+
+```java
+package com.cryptovault.controller;
+
+import com.cryptovault.entity.FileMetadata;
+import com.cryptovault.service.FileService;
+import com.cryptovault.service.FileService.DecryptedFile;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.*;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import java.util.HashMap;
+import java.util.Map;
+
+@RestController
+@RequestMapping("/api/files")
+@CrossOrigin(origins = "*")
+public class FileController {
+
+    @Autowired
+    private FileService fileService;
+
+    @PostMapping("/upload")
+    public ResponseEntity<Map<String, String>> uploadFile(@RequestParam("file") MultipartFile file) {
+        try {
+            FileMetadata metadata = fileService.storeFile(file);
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "File uploaded and encrypted successfully!");
+            response.put("fileId", String.valueOf(metadata.getId()));
+            response.put("fileName", metadata.getFileName());
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        } catch (Exception e) {
+            Map<String, String> response = new HashMap<>();
+            response.put("error", "Failed to upload file: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    @GetMapping("/download/{id}")
+    public ResponseEntity<Resource> downloadFile(@PathVariable("id") Long id) {
+        try {
+            DecryptedFile decryptedFile = fileService.getFile(id);
+            return ResponseEntity.ok()
+                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                    .header(HttpHeaders.CONTENT_DISPOSITION,
+                            "attachment; filename=\"" + decryptedFile.getFileName() + "\"")
+                    .body(new ByteArrayResource(decryptedFile.getContent()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+    }
+}
+```
+
+---
+
+## 17. index.html (Home Page)
+Path: src/main/resources/static/index.html
+
+
+The full index.html is a single-page landing site with animated orbs, star particles, a hero section, features grid, creator card, tech stack badges, and footer. Key sections:
+
+- Navbar with logo, nav links (Features, About, Login, Get Started)
+- Hero with animated title, CTA buttons, trust badges, and API preview card
+- Features grid (6 cards: AES-128, User Auth, Private Vault, Admin Panel, REST API, Dark UI)
+- About section with project description and creator card (Jevin)
+- Tech stack badges (Java 17, Spring Boot 3.2, Spring Security, JPA, AES-128, BCrypt, Thymeleaf, H2, REST API)
+- Footer with links
+
+See full file at: src/main/resources/static/index.html
+
+---
+
+## 18. login.html
+Path: src/main/resources/templates/login.html
+
+Glassmorphism login card with:
+- Animated gradient orbs and floating particles
+- Logo ring with pulse-glow animation
+- Username and password fields with icons
+- Thymeleaf error/success/logout message display
+- "Sign In" button with shimmer hover effect
+- Link to register page
+- Security badges (AES-128, BCrypt, Spring Boot)
+
+See full file at: src/main/resources/templates/login.html
+
+---
+
+## 19. register.html
+Path: src/main/resources/templates/register.html
+
+Registration card with:
+- Teal/blue animated orbs
+- Username and password fields
+- Live password strength bar (5 levels, color-coded)
+- 4 perk cards (AES-128, BCrypt, Private, Fast)
+- Link back to login
+
+See full file at: src/main/resources/templates/register.html
+
+---
+
+## 20. dashboard.html
+Path: src/main/resources/templates/dashboard.html
+
+Main user dashboard with:
+- Sticky navbar with username, role badge, admin panel link, sign out
+- Stats row (Files Stored, AES Encryption, 100% Private)
+- Drag-and-drop upload zone with progress bar and status messages
+- Encrypted files table (name, size, upload date, decrypt & download button)
+- Empty state when no files uploaded
+- JavaScript: drag/drop handling, fetch API upload, download redirect
+
+See full file at: src/main/resources/templates/dashboard.html
+
+---
+
+## 21. admin.html
+Path: src/main/resources/templates/admin.html
+
+Admin control panel with:
+- Gold-themed navbar with ADMINISTRATOR badge
+- 3 stat cards (Registered Users, Encrypted Files, AES-128)
+- All Users table (avatar, username, ID, role badge)
+- All Files table (file name, owner, size, upload date)
+- Gold animated grid background with orange/gold orbs
+
+See full file at: src/main/resources/templates/admin.html
+
+---
+
+## 22. AESUtilsTest.java
+Path: src/test/java/com/cryptovault/util/AESUtilsTest.java
+
+```java
+package com.cryptovault.util;
+
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+import java.nio.charset.StandardCharsets;
+
+public class AESUtilsTest {
+
+    @Test
+    public void testEncryptionAndDecryption() throws Exception {
+        String originalText = "This is a strictly confidential file content!!";
+        byte[] originalBytes = originalText.getBytes(StandardCharsets.UTF_8);
+
+        // Encrypt
+        byte[] encryptedBytes = AESUtils.encrypt(originalBytes);
+        assertNotNull(encryptedBytes);
+        assertNotEquals(originalBytes.length, 0);
+
+        // Decrypt
+        byte[] decryptedBytes = AESUtils.decrypt(encryptedBytes);
+        String decryptedText = new String(decryptedBytes, StandardCharsets.UTF_8);
+
+        // Verify decrypted matches original
+        assertEquals(originalText, decryptedText);
+        System.out.println("AES Validation Successful. Original text matching the decrypted text.");
+    }
+}
+```
+
+---
+
+## Project Structure
+
+```
+CryptoVault/
+├── pom.xml
+├── src/
+│   ├── main/
+│   │   ├── java/com/cryptovault/
+│   │   │   ├── CryptoVaultApplication.java
+│   │   │   ├── config/
+│   │   │   │   ├── SecurityConfig.java
+│   │   │   │   └── DataInitializer.java
+│   │   │   ├── controller/
+│   │   │   │   ├── AuthController.java
+│   │   │   │   └── FileController.java
+│   │   │   ├── entity/
+│   │   │   │   ├── User.java
+│   │   │   │   └── FileMetadata.java
+│   │   │   ├── repository/
+│   │   │   │   ├── UserRepository.java
+│   │   │   │   └── FileMetadataRepository.java
+│   │   │   ├── service/
+│   │   │   │   ├── UserService.java
+│   │   │   │   └── FileService.java
+│   │   │   ├── util/
+│   │   │   │   └── AESUtils.java
+│   │   │   └── exception/
+│   │   │       ├── FileStorageException.java
+│   │   │       └── GlobalExceptionHandler.java
+│   │   └── resources/
+│   │       ├── application.properties
+│   │       ├── static/
+│   │       │   └── index.html
+│   │       └── templates/
+│   │           ├── login.html
+│   │           ├── register.html
+│   │           ├── dashboard.html
+│   │           └── admin.html
+│   └── test/
+│       └── java/com/cryptovault/util/
+│           └── AESUtilsTest.java
+└── uploads/   (encrypted .enc files stored here)
+```
+
+---
+
+## Default Credentials
+
+| Role  | Username | Password  |
+|-------|----------|-----------|
+| Admin | admin    | admin123  |
+
+---
+
+## How to Run
+
+```bash
+./apache-maven-3.9.6/bin/mvn spring-boot:run
+```
+
+Then open: http://localhost:8080
+
+## How to Test
+
+```bash
+./apache-maven-3.9.6/bin/mvn test
+```
+
+Test result: 1 test passed — AES encrypt/decrypt validation successful.
