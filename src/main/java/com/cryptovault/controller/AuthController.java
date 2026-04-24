@@ -1,5 +1,6 @@
 package com.cryptovault.controller;
 
+import com.cryptovault.entity.User;
 import com.cryptovault.service.FileService;
 import com.cryptovault.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,7 +18,11 @@ public class AuthController {
     @Autowired
     private FileService fileService;
 
+    @Autowired
+    private com.cryptovault.repository.TransactionRepository transactionRepository;
+
     @GetMapping("/login")
+
     public String loginPage(@RequestParam(name = "error", required = false) String error,
                             @RequestParam(name = "logout", required = false) String logout,
                             Model model) {
@@ -50,18 +55,26 @@ public class AuthController {
         boolean isAdmin = auth.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
 
+        User user = userService.getUserByUsername(username);
         model.addAttribute("username", username);
         model.addAttribute("isAdmin", isAdmin);
+        model.addAttribute("user", user);
         model.addAttribute("files", fileService.getFilesForUser(username));
+        model.addAttribute("transactions", transactionRepository.findByUsernameOrderByTimestampDesc(username));
         return "dashboard";
     }
 
     @GetMapping("/admin")
     public String adminPanel(Model model) {
+        List<com.cryptovault.entity.Transaction> allTx = transactionRepository.findAll();
+        double totalRevenue = allTx.stream().mapToDouble(com.cryptovault.entity.Transaction::getAmount).sum();
+        
         model.addAttribute("users", userService.getAllUsers());
         model.addAttribute("files", fileService.getAllFiles());
         model.addAttribute("userCount", userService.getUserCount());
         model.addAttribute("fileCount", fileService.getTotalFileCount());
+        model.addAttribute("totalRevenue", totalRevenue);
         return "admin";
     }
+
 }

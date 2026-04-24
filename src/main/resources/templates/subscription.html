@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>CryptoVault – Subscription Plans</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <meta th:if="${_csrf}" name="_csrf" th:content="${_csrf.token}"/>
+    <meta th:if="${_csrf}" name="_csrf_header" th:content="${_csrf.headerName}"/>
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            min-height: 100vh;
+            background: #08080f;
+            font-family: 'Inter', sans-serif;
+            color: #fff;
+            overflow-x: hidden;
+        }
+
+        /* Subtle animated background grid */
+        body::before {
+            content: '';
+            position: fixed; inset: 0;
+            background-image:
+                linear-gradient(rgba(108,71,255,0.04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(108,71,255,0.04) 1px, transparent 1px);
+            background-size: 50px 50px;
+            pointer-events: none;
+            animation: grid-move 20s linear infinite;
+        }
+        @keyframes grid-move { to { background-position: 50px 50px; } }
+
+        /* Glowing orbs */
+        .orb { position: fixed; border-radius: 50%; filter: blur(100px); opacity: 0.12; pointer-events: none; animation: drift 12s ease-in-out infinite; }
+        .orb-1 { width: 600px; height: 600px; background: #6c47ff; top: -200px; left: -200px; }
+        .orb-2 { width: 400px; height: 400px; background: #ff47a3; bottom: -150px; right: -150px; animation-delay: -6s; }
+        @keyframes drift { 0%,100% { transform: translate(0,0); } 50% { transform: translate(40px, -40px); } }
+
+        /* ─── NAVBAR ─── */
+        nav {
+            position: sticky; top: 0; z-index: 100;
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 14px 40px;
+            background: rgba(8,8,15,0.8);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .nav-brand { font-size: 1.3rem; font-weight: 800; display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; }
+        .nav-brand .icon { 
+            width: 36px; height: 36px; border-radius: 10px;
+            background: linear-gradient(135deg, #6c47ff, #ff47a3);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1rem;
+            box-shadow: 0 0 20px rgba(108,71,255,0.5);
+        }
+        .brand-text { background: linear-gradient(90deg, #fff, #c4b5fd); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+
+        .nav-right { display: flex; align-items: center; gap: 12px; }
+        .nav-btn {
+            padding: 7px 16px; border-radius: 10px; font-size: 0.82rem; font-weight: 600;
+            text-decoration: none; transition: all 0.2s; border: 1px solid transparent;
+            font-family: 'Inter', sans-serif; cursor: pointer; background: none; color: rgba(255,255,255,0.5);
+        }
+        .nav-btn:hover { background: rgba(255,255,255,0.06); color: #fff; }
+
+        /* ─── MAIN ─── */
+        .container { max-width: 1100px; margin: 0 auto; padding: 60px 24px; position: relative; z-index: 1; }
+
+        .page-header { text-align: center; margin-bottom: 60px; }
+        .page-header h1 { font-size: 3rem; font-weight: 800; letter-spacing: -1.5px; margin-bottom: 12px; }
+        .page-header h1 span { background: linear-gradient(90deg, #6c47ff, #ff47a3); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .page-header p { color: rgba(255,255,255,0.4); font-size: 1.1rem; max-width: 600px; margin: 0 auto; }
+
+        /* Pricing Grid */
+        .pricing-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; margin-top: 40px; }
+
+        .pricing-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 24px; padding: 40px;
+            display: flex; flex-direction: column;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative; overflow: hidden;
+        }
+        .pricing-card:hover {
+            transform: translateY(-10px);
+            border-color: rgba(108,71,255,0.4);
+            background: rgba(255,255,255,0.05);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+        }
+        .pricing-card.popular {
+            border-color: rgba(108,71,255,0.5);
+            background: rgba(108,71,255,0.05);
+        }
+        .pricing-card.popular::before {
+            content: 'MOST POPULAR';
+            position: absolute; top: 12px; right: -35px;
+            background: linear-gradient(90deg, #6c47ff, #ff47a3);
+            font-size: 0.65rem; font-weight: 800; padding: 4px 40px;
+            transform: rotate(45deg);
+        }
+
+        .plan-name { font-size: 0.9rem; font-weight: 700; color: #a78bfa; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 20px; }
+        .plan-price { font-size: 3rem; font-weight: 800; margin-bottom: 24px; }
+        .plan-price span { font-size: 1rem; color: rgba(255,255,255,0.3); font-weight: 400; }
+        
+        .plan-features { list-style: none; margin-bottom: 40px; flex-grow: 1; }
+        .plan-features li { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; font-size: 0.95rem; color: rgba(255,255,255,0.7); }
+        .plan-features li::before { content: '✓'; color: #6ee7d0; font-weight: 800; }
+
+        .btn-select {
+            padding: 16px; border-radius: 14px; font-size: 1rem; font-weight: 700;
+            cursor: pointer; transition: all 0.2s; border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.05); color: #fff; text-align: center; text-decoration: none;
+        }
+        .btn-select:hover { background: rgba(255,255,255,0.1); border-color: #fff; }
+        .popular .btn-select {
+            background: linear-gradient(135deg, #6c47ff, #ff47a3);
+            border: none;
+        }
+        .popular .btn-select:hover { transform: scale(1.02); box-shadow: 0 10px 20px rgba(108,71,255,0.3); }
+
+        .current-plan-badge {
+            background: rgba(0,201,167,0.15); border: 1px solid #00c9a7;
+            color: #00c9a7; padding: 8px; border-radius: 10px; text-align: center;
+            font-size: 0.85rem; font-weight: 700;
+        }
+
+        /* ─── PAYMENT MODAL ─── */
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(8px); display: none; align-items: center; justify-content: center;
+            z-index: 1000;
+        }
+        .modal {
+            background: #0d0d16; border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 24px; padding: 40px; width: 100%; max-width: 500px;
+            position: relative;
+        }
+        .modal-header { margin-bottom: 30px; }
+        .modal-header h2 { font-size: 1.5rem; font-weight: 800; }
+        
+        .payment-methods { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 30px; }
+        .payment-method {
+            background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px; padding: 16px; cursor: pointer; text-align: center;
+            transition: all 0.2s;
+        }
+        .payment-method:hover { border-color: #6c47ff; background: rgba(108,71,255,0.05); }
+        .payment-method.selected { border-color: #6c47ff; background: rgba(108,71,255,0.1); box-shadow: 0 0 15px rgba(108,71,255,0.2); }
+        .payment-method .icon { font-size: 1.5rem; margin-bottom: 8px; display: block; }
+        .payment-method .name { font-size: 0.75rem; font-weight: 600; color: rgba(255,255,255,0.6); }
+
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; font-size: 0.85rem; color: rgba(255,255,255,0.5); margin-bottom: 8px; }
+        .form-group input {
+            width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px; padding: 12px 16px; color: #fff; font-family: inherit;
+        }
+        .form-group input:focus { outline: none; border-color: #6c47ff; }
+
+        .btn-confirm {
+            width: 100%; padding: 16px; border-radius: 12px; border: none;
+            background: linear-gradient(135deg, #6c47ff, #ff47a3);
+            color: #fff; font-size: 1rem; font-weight: 700; cursor: pointer; transition: all 0.2s;
+        }
+        .btn-confirm:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(108,71,255,0.3); }
+
+        .kyc-banner {
+            margin-top: 40px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 20px; padding: 30px; display: flex; align-items: center; justify-content: space-between;
+        }
+        .kyc-info h3 { font-size: 1.1rem; margin-bottom: 4px; }
+        .kyc-info p { color: rgba(255,255,255,0.4); font-size: 0.9rem; }
+        .btn-kyc {
+            padding: 10px 20px; border-radius: 10px; border: 1px solid #6c47ff;
+            color: #6c47ff; font-weight: 600; text-decoration: none; transition: all 0.2s;
+        }
+        .btn-kyc:hover { background: #6c47ff; color: #fff; }
+
+        .status-pill {
+            display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px;
+            border-radius: 20px; font-size: 0.75rem; font-weight: 700; margin-left: 10px;
+        }
+        .status-pill.verified { background: rgba(0,201,167,0.15); color: #6ee7d0; }
+        .status-pill.pending { background: rgba(255,165,0,0.15); color: #ffa500; }
+
+        @media (max-width: 900px) {
+            .pricing-grid { grid-template-columns: 1fr; max-width: 500px; margin: 40px auto; }
+        }
+    </style>
+</head>
+<body>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+
+    <nav>
+        <a href="/dashboard" class="nav-brand">
+            <div class="icon">🔒</div>
+            <span class="brand-text">CryptoVault</span>
+        </a>
+        <div class="nav-right">
+            <a href="/dashboard" class="nav-btn">Dashboard</a>
+            <form th:action="@{/logout}" method="post" style="margin:0;">
+                <button type="submit" class="nav-btn" style="background:none;border:none;cursor:pointer;">Sign out</button>
+            </form>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="page-header">
+            <h1>Upgrade Your <span>Security</span></h1>
+            <p>Choose a plan that fits your needs. Unlimited encrypted storage and advanced security features await.</p>
+        </div>
+
+        <div th:if="${param.success}" style="background: rgba(0,201,167,0.12); border: 1px solid rgba(0,201,167,0.3); color: #6ee7d0; padding: 16px; border-radius: 12px; text-align: center; margin-bottom: 30px; font-weight: 600;">
+            ✅ Plan upgraded successfully! Your new features are now active.
+        </div>
+
+        <div class="pricing-grid">
+            <!-- Weekly Plan -->
+            <div class="pricing-card" th:classappend="${user.subscriptionPlan == 'WEEKLY'} ? 'popular' : ''">
+                <div class="plan-name">Weekly</div>
+                <div class="plan-price">$5<span>/week</span></div>
+                <ul class="plan-features">
+                    <li>10GB Encrypted Storage</li>
+                    <li>Basic Support</li>
+                    <li>Standard Encryption</li>
+                    <li>2-Factor Authentication</li>
+                </ul>
+                <div th:if="${user.subscriptionPlan == 'WEEKLY'}" class="current-plan-badge">Current Plan</div>
+                <button th:unless="${user.subscriptionPlan == 'WEEKLY'}" class="btn-select" onclick="openPayment('WEEKLY', 5)">Get Weekly</button>
+            </div>
+
+            <!-- Monthly Plan -->
+            <div class="pricing-card" th:classappend="${user.subscriptionPlan == 'MONTHLY'} ? 'popular' : ''">
+                <div class="plan-name">Monthly</div>
+                <div class="plan-price">$15<span>/month</span></div>
+                <ul class="plan-features">
+                    <li>50GB Encrypted Storage</li>
+                    <li>Priority Support</li>
+                    <li>Advanced AES-256</li>
+                    <li>Mobile App Access</li>
+                    <li>Auto-Backups</li>
+                </ul>
+                <div th:if="${user.subscriptionPlan == 'MONTHLY'}" class="current-plan-badge">Current Plan</div>
+                <button th:unless="${user.subscriptionPlan == 'MONTHLY'}" class="btn-select" onclick="openPayment('MONTHLY', 15)">Get Monthly</button>
+            </div>
+
+            <!-- Annual Plan -->
+            <div class="pricing-card" th:classappend="${user.subscriptionPlan == 'ANNUALLY'} ? 'popular' : ''">
+                <div class="plan-name">Annually</div>
+                <div class="plan-price">$120<span>/year</span></div>
+                <ul class="plan-features">
+                    <li>Unlimited Storage</li>
+                    <li>24/7 Dedicated Support</li>
+                    <li>Quantum-Resistant Enc.</li>
+                    <li>Custom Vault Domains</li>
+                    <li>Enterprise Security</li>
+                </ul>
+                <div th:if="${user.subscriptionPlan == 'ANNUALLY'}" class="current-plan-badge">Current Plan</div>
+                <button th:unless="${user.subscriptionPlan == 'ANNUALLY'}" class="btn-select" onclick="openPayment('ANNUALLY', 120)">Get Annually</button>
+            </div>
+        </div>
+
+        <div class="kyc-banner">
+            <div class="kyc-info">
+                <h3>Identity Verification
+                    <span th:if="${user.kycVerified}" class="status-pill verified">✓ VERIFIED</span>
+                    <span th:unless="${user.kycVerified}" class="status-pill pending">PENDING</span>
+                </h3>
+                <p>Required for large transactions and high-tier storage plans.</p>
+            </div>
+            <a th:unless="${user.kycVerified}" href="/subscription/kyc" class="btn-kyc">Verify KYC</a>
+        </div>
+    </div>
+
+    <!-- Payment Modal -->
+    <div class="modal-overlay" id="paymentModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 id="modalTitle">Complete Payment</h2>
+                <p style="color:rgba(255,255,255,0.4); font-size:0.9rem; margin-top:8px;">Choose your preferred payment method</p>
+            </div>
+            
+            <form th:action="@{/subscription/upgrade}" method="post">
+                <input type="hidden" name="plan" id="selectedPlan">
+                <input type="hidden" name="paymentMethod" id="selectedMethod" value="Credit Card">
+
+                <div class="payment-methods">
+                    <div class="payment-method selected" onclick="selectMethod(this, 'Credit Card')">
+                        <span class="icon">💳</span>
+                        <span class="name">Card</span>
+                    </div>
+                    <div class="payment-method" onclick="selectMethod(this, 'UPI')">
+                        <span class="icon">📱</span>
+                        <span class="name">UPI</span>
+                    </div>
+                    <div class="payment-method" onclick="selectMethod(this, 'Net Banking')">
+                        <span class="icon">🏦</span>
+                        <span class="name">Bank</span>
+                    </div>
+                </div>
+
+                <div id="cardFields">
+                    <div class="form-group">
+                        <label>Card Number</label>
+                        <input type="text" placeholder="**** **** **** ****">
+                    </div>
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
+                        <div class="form-group">
+                            <label>Expiry</label>
+                            <input type="text" placeholder="MM/YY">
+                        </div>
+                        <div class="form-group">
+                            <label>CVV</label>
+                            <input type="password" placeholder="***">
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-confirm">Pay &amp; Upgrade</button>
+                <button type="button" onclick="closePayment()" style="width:100%; margin-top:12px; background:none; border:none; color:rgba(255,255,255,0.3); cursor:pointer;">Cancel</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        console.log('Subscription scripts loaded');
+
+        function openPayment(plan, price) {
+            console.log('Opening payment modal for:', plan, price);
+            const modal = document.getElementById('paymentModal');
+            const planInput = document.getElementById('selectedPlan');
+            const title = document.getElementById('modalTitle');
+            
+            if (modal && planInput && title) {
+                planInput.value = plan;
+                title.textContent = `Pay $${price} for ${plan} Plan`;
+                modal.style.display = 'flex';
+                console.log('Modal display set to flex');
+            } else {
+                console.error('Modal elements not found!');
+            }
+        }
+
+        function closePayment() {
+            console.log('Closing payment modal');
+            document.getElementById('paymentModal').style.display = 'none';
+        }
+
+        function selectMethod(el, method) {
+            console.log('Selected method:', method);
+            document.querySelectorAll('.payment-method').forEach(m => m.classList.remove('selected'));
+            el.classList.add('selected');
+            document.getElementById('selectedMethod').value = method;
+            
+            const cardFields = document.getElementById('cardFields');
+            if (method !== 'Credit Card') {
+                cardFields.style.opacity = '0.3';
+                cardFields.style.pointerEvents = 'none';
+            } else {
+                cardFields.style.opacity = '1';
+                cardFields.style.pointerEvents = 'all';
+            }
+        }
+    </script>
+</body>
+</html>
+

@@ -218,7 +218,8 @@
             <span class="brand-text">CryptoVault</span>
         </div>
         <div class="nav-right">
-            <a href="/" class="nav-btn nav-btn-home">🏠 Home</a>
+            <a href="/dashboard" class="nav-btn nav-btn-home">🏠 Home</a>
+            <a href="/subscription" class="nav-btn">💎 Subscription</a>
             <div class="nav-user">
                 <div class="avatar" th:text="${username.substring(0,1).toUpperCase()}">U</div>
                 <span th:text="${username}" style="font-size:0.85rem; color:rgba(255,255,255,0.7);"></span>
@@ -255,11 +256,11 @@
                     <div class="label">Encryption</div>
                 </div>
             </div>
-            <div class="stat-card">
-                <div class="stat-icon stat-icon-teal">✅</div>
+            <div class="stat-card" style="cursor:pointer;" onclick="window.location.href='/subscription'">
+                <div class="stat-icon stat-icon-teal">💎</div>
                 <div class="stat-info">
-                    <div class="num">100%</div>
-                    <div class="label">Private</div>
+                    <div class="num" th:text="${#strings.toUpperCase(user.subscriptionPlan)}">FREE</div>
+                    <div class="label" th:text="${user.kycVerified ? 'Verified Account' : 'KYC Pending'}">Plan Status</div>
                 </div>
             </div>
         </div>
@@ -323,7 +324,44 @@
                 <p>No files yet — upload your first encrypted file above!</p>
             </div>
         </div>
+
+        <!-- Billing History -->
+        <div class="files-card" style="margin-top: 40px; margin-bottom: 80px;">
+            <div class="section-header">
+                <div class="header-title">
+                    <div class="icon">💳</div>
+                    <h2>Billing History</h2>
+                </div>
+                <div class="header-badge" th:text="${transactions.size()} + ' Transactions'"></div>
+            </div>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Plan</th>
+                            <th>Amount</th>
+                            <th>Payment Method</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="tx : ${transactions}">
+                            <td style="color:rgba(255,255,255,0.4);" th:text="${#temporals.format(tx.timestamp, 'dd MMM yyyy, HH:mm')}"></td>
+                            <td><span class="badge" th:classappend="${tx.plan == 'ANNUALLY'} ? 'badge-admin' : 'badge-user'" th:text="${tx.plan}">PLAN</span></td>
+                            <td style="font-weight: 600; color: #4ade80;" th:text="'$' + ${tx.amount}"></td>
+                            <td th:text="${tx.paymentMethod}"></td>
+                        </tr>
+                        <tr th:if="${transactions.isEmpty()}">
+                            <td colspan="4" style="text-align: center; padding: 40px; color: rgba(255,255,255,0.3);">
+                                No recent transactions.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
+
 
     <!-- Footer -->
     <footer class="page-footer">

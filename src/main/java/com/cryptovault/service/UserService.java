@@ -19,10 +19,27 @@ public class UserService implements UserDetailsService {
     @Autowired
     private BCryptPasswordEncoder passwordEncoder;
 
+    public User getUserByUsername(String username) {
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
+    }
+
+    public User updateSubscription(String username, String plan, String paymentMethod) {
+        User user = getUserByUsername(username);
+        user.setSubscriptionPlan(plan);
+        user.setPaymentMethod(paymentMethod);
+        return userRepository.save(user);
+    }
+
+    public User updateKyc(String username, boolean verified) {
+        User user = getUserByUsername(username);
+        user.setKycVerified(verified);
+        return userRepository.save(user);
+    }
+
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
+        User user = getUserByUsername(username);
         return new org.springframework.security.core.userdetails.User(
                 user.getUsername(),
                 user.getPassword(),

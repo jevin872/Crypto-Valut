@@ -5,6 +5,7 @@ D:\Crypto-Valut\src\main\java\com\cryptovault\exception\FileStorageException.jav
 D:\Crypto-Valut\src\main\java\com\cryptovault\exception\GlobalExceptionHandler.java
 D:\Crypto-Valut\src\main\java\com\cryptovault\service\UserService.java
 D:\Crypto-Valut\src\main\java\com\cryptovault\config\SecurityConfig.java
+D:\Crypto-Valut\src\main\java\com\cryptovault\controller\SubscriptionController.java
 D:\Crypto-Valut\src\main\java\com\cryptovault\repository\FileMetadataRepository.java
 D:\Crypto-Valut\src\main\java\com\cryptovault\util\AESUtils.java
 D:\Crypto-Valut\src\main\java\com\cryptovault\service\FileService.java

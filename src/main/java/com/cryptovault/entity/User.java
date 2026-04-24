@@ -19,6 +19,15 @@ public class User {
     @Column(nullable = false)
     private String role; // ROLE_USER or ROLE_ADMIN
 
+    @Column(nullable = false)
+    private String subscriptionPlan = "FREE"; // FREE, WEEKLY, MONTHLY, ANNUALLY
+
+    @Column(nullable = false)
+    private boolean kycVerified = false;
+
+    @Column
+    private String paymentMethod;
+
     // Constructors
     public User() {}
 
@@ -26,6 +35,8 @@ public class User {
         this.username = username;
         this.password = password;
         this.role = role;
+        this.subscriptionPlan = "FREE";
+        this.kycVerified = false;
     }
 
     // Getters & Setters
@@ -40,4 +51,13 @@ public class User {
 
     public String getRole() { return role; }
     public void setRole(String role) { this.role = role; }
+
+    public String getSubscriptionPlan() { return subscriptionPlan; }
+    public void setSubscriptionPlan(String subscriptionPlan) { this.subscriptionPlan = subscriptionPlan; }
+
+    public boolean isKycVerified() { return kycVerified; }
+    public void setKycVerified(boolean kycVerified) { this.kycVerified = kycVerified; }
+
+    public String getPaymentMethod() { return paymentMethod; }
+    public void setPaymentMethod(String paymentMethod) { this.paymentMethod = paymentMethod; }
 }

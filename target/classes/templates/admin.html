@@ -194,7 +194,13 @@
                 <div class="stat-num teal-text">AES</div>
                 <div class="stat-label">128-bit Encryption</div>
             </div>
+            <div class="stat-card gold">
+                <span class="stat-emoji">💰</span>
+                <div class="stat-num gold-text" th:text="'$' + ${totalRevenue}">$0</div>
+                <div class="stat-label">Total Revenue</div>
+            </div>
         </div>
+
 
         <!-- Users Table -->
         <div class="panel">
@@ -209,6 +215,8 @@
                         <th>User</th>
                         <th>ID</th>
                         <th>Role</th>
+                        <th>Plan</th>
+                        <th>KYC</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -223,6 +231,11 @@
                         <td>
                             <span class="role-badge role-admin" th:if="${u.role == 'ROLE_ADMIN'}">⭐ Admin</span>
                             <span class="role-badge role-user" th:if="${u.role == 'ROLE_USER'}">User</span>
+                        </td>
+                        <td class="muted" th:text="${u.subscriptionPlan}"></td>
+                        <td>
+                            <span th:if="${u.kycVerified}" style="color:#00c9a7; font-weight:700;">✅</span>
+                            <span th:unless="${u.kycVerified}" style="color:rgba(255,255,255,0.2);">⏳</span>
                         </td>
                     </tr>
                 </tbody>

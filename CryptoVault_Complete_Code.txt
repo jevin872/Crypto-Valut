@@ -13,22 +13,29 @@
 4. SecurityConfig.java
 5. DataInitializer.java
 6. User.java
-7. FileMetadata.java
-8. UserRepository.java
-9. FileMetadataRepository.java
-10. UserService.java
-11. FileService.java
-12. AESUtils.java
-13. FileStorageException.java
-14. GlobalExceptionHandler.java
-15. AuthController.java
-16. FileController.java
-17. index.html
-18. login.html
-19. register.html
-20. dashboard.html
-21. admin.html
-22. AESUtilsTest.java
+7. Transaction.java
+8. FileMetadata.java
+9. UserRepository.java
+10. TransactionRepository.java
+11. FileMetadataRepository.java
+12. UserService.java
+13. FileService.java
+14. AESUtils.java
+15. FileStorageException.java
+16. GlobalExceptionHandler.java
+17. AuthController.java
+18. SubscriptionController.java
+19. FileController.java
+20. index.html
+21. login.html
+22. register.html
+23. dashboard.html
+24. admin.html
+25. subscription.html
+26. kyc.html
+27. AESUtilsTest.java
+
+
 
 ---
 
@@ -261,12 +268,23 @@ public class User {
     @Column(nullable = false)
     private String role;
 
+    @Column(nullable = false)
+    private String subscriptionPlan = "FREE";
+
+    @Column(nullable = false)
+    private boolean kycVerified = false;
+
+    @Column
+    private String paymentMethod;
+
     public User() {}
 
     public User(String username, String password, String role) {
         this.username = username;
         this.password = password;
         this.role = role;
+        this.subscriptionPlan = "FREE";
+        this.kycVerified = false;
     }
 
     public Long getId() { return id; }
@@ -277,12 +295,71 @@ public class User {
     public void setPassword(String password) { this.password = password; }
     public String getRole() { return role; }
     public void setRole(String role) { this.role = role; }
+    public String getSubscriptionPlan() { return subscriptionPlan; }
+    public void setSubscriptionPlan(String subscriptionPlan) { this.subscriptionPlan = subscriptionPlan; }
+    public boolean isKycVerified() { return kycVerified; }
+    public void setKycVerified(boolean kycVerified) { this.kycVerified = kycVerified; }
+    public String getPaymentMethod() { return paymentMethod; }
+    public void setPaymentMethod(String paymentMethod) { this.paymentMethod = paymentMethod; }
 }
 ```
 
 ---
 
-## 7. FileMetadata.java
+## 7. Transaction.java
+Path: src/main/java/com/cryptovault/entity/Transaction.java
+
+```java
+package com.cryptovault.entity;
+
+import jakarta.persistence.*;
+import java.time.LocalDateTime;
+
+@Entity
+@Table(name = "transactions")
+public class Transaction {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable = false)
+    private String username;
+
+    @Column(nullable = false)
+    private String plan;
+
+    @Column(nullable = false)
+    private Double amount;
+
+    @Column(nullable = false)
+    private String paymentMethod;
+
+    @Column(nullable = false)
+    private LocalDateTime timestamp;
+
+    public Transaction() {}
+
+    public Transaction(String username, String plan, Double amount, String paymentMethod) {
+        this.username = username;
+        this.plan = plan;
+        this.amount = amount;
+        this.paymentMethod = paymentMethod;
+        this.timestamp = LocalDateTime.now();
+    }
+
+    public Long getId() { return id; }
+    public String getUsername() { return username; }
+    public String getPlan() { return plan; }
+    public Double getAmount() { return amount; }
+    public String getPaymentMethod() { return paymentMethod; }
+    public LocalDateTime getTimestamp() { return timestamp; }
+}
+```
+
+---
+
+## 8. FileMetadata.java
 Path: src/main/java/com/cryptovault/entity/FileMetadata.java
 
 ```java
@@ -360,7 +437,26 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
 ---
 
-## 9. FileMetadataRepository.java
+## 10. TransactionRepository.java
+Path: src/main/java/com/cryptovault/repository/TransactionRepository.java
+
+```java
+package com.cryptovault.repository;
+
+import com.cryptovault.entity.Transaction;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+import java.util.List;
+
+@Repository
+public interface TransactionRepository extends JpaRepository<Transaction, Long> {
+    List<Transaction> findByUsernameOrderByTimestampDesc(String username);
+}
+```
+
+---
+
+## 11. FileMetadataRepository.java
 Path: src/main/java/com/cryptovault/repository/FileMetadataRepository.java
 
 ```java
@@ -404,10 +500,27 @@ public class UserService implements UserDetailsService {
     @Autowired
     private BCryptPasswordEncoder passwordEncoder;
 
+    public User getUserByUsername(String username) {
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
+    }
+
+    public User updateSubscription(String username, String plan, String paymentMethod) {
+        User user = getUserByUsername(username);
+        user.setSubscriptionPlan(plan);
+        user.setPaymentMethod(paymentMethod);
+        return userRepository.save(user);
+    }
+
+    public User updateKyc(String username, boolean verified) {
+        User user = getUserByUsername(username);
+        user.setKycVerified(verified);
+        return userRepository.save(user);
+    }
+
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
+        User user = getUserByUsername(username);
         return new org.springframework.security.core.userdetails.User(
                 user.getUsername(),
                 user.getPassword(),
@@ -668,8 +781,10 @@ public class AuthController {
         String username = auth.getName();
         boolean isAdmin = auth.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+        User user = userService.getUserByUsername(username);
         model.addAttribute("username", username);
         model.addAttribute("isAdmin", isAdmin);
+        model.addAttribute("user", user);
         model.addAttribute("files", fileService.getFilesForUser(username));
         return "dashboard";
     }
@@ -683,6 +798,60 @@ public class AuthController {
         return "admin";
     }
 }
+```
+
+---
+
+## 16. SubscriptionController.java
+Path: src/main/java/com/cryptovault/controller/SubscriptionController.java
+
+```java
+package com.cryptovault.controller;
+
+import com.cryptovault.entity.User;
+import com.cryptovault.service.UserService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.*;
+
+@Controller
+@RequestMapping("/subscription")
+public class SubscriptionController {
+
+    @Autowired
+    private UserService userService;
+
+    @GetMapping
+    public String subscriptionPage(Authentication auth, Model model) {
+        User user = userService.getUserByUsername(auth.getName());
+        model.addAttribute("user", user);
+        return "subscription";
+    }
+
+    @PostMapping("/upgrade")
+    public String upgradePlan(@RequestParam("plan") String plan,
+                              @RequestParam("paymentMethod") String paymentMethod,
+                              Authentication auth) {
+        userService.updateSubscription(auth.getName(), plan, paymentMethod);
+        return "redirect:/subscription?success=true";
+    }
+
+    @GetMapping("/kyc")
+    public String kycPage(Authentication auth, Model model) {
+        User user = userService.getUserByUsername(auth.getName());
+        model.addAttribute("user", user);
+        return "kyc";
+    }
+
+    @PostMapping("/kyc/verify")
+    public String verifyKyc(Authentication auth) {
+        userService.updateKyc(auth.getName(), true);
+        return "redirect:/subscription/kyc?verified=true";
+    }
+}
+```
 ```
 
 ---
@@ -797,29 +966,56 @@ See full file at: src/main/resources/templates/register.html
 ## 20. dashboard.html
 Path: src/main/resources/templates/dashboard.html
 
-Main user dashboard with:
-- Sticky navbar with username, role badge, admin panel link, sign out
-- Stats row (Files Stored, AES Encryption, 100% Private)
+- Sticky navbar with username, role badge, Subscription link, admin panel link, sign out
+- Stats row (Files Stored, AES Encryption, Plan Status: WEEKLY/MONTHLY/ANNUAL)
 - Drag-and-drop upload zone with progress bar and status messages
 - Encrypted files table (name, size, upload date, decrypt & download button)
-- Empty state when no files uploaded
+- **New: Billing History table showing recent plan upgrades and payments.**
 - JavaScript: drag/drop handling, fetch API upload, download redirect
+
 
 See full file at: src/main/resources/templates/dashboard.html
 
 ---
 
-## 21. admin.html
+## 22. admin.html
 Path: src/main/resources/templates/admin.html
 
 Admin control panel with:
 - Gold-themed navbar with ADMINISTRATOR badge
-- 3 stat cards (Registered Users, Encrypted Files, AES-128)
-- All Users table (avatar, username, ID, role badge)
+- **4 stat cards: Registered Users, Encrypted Files, AES-128, and Total Revenue.**
+- All Users table (avatar, username, ID, role, Plan Tier, KYC Status)
 - All Files table (file name, owner, size, upload date)
 - Gold animated grid background with orange/gold orbs
 
+
 See full file at: src/main/resources/templates/admin.html
+
+---
+
+## 23. subscription.html
+Path: src/main/resources/templates/subscription.html
+
+Premium pricing page with:
+- 3 Pricing Cards: Weekly ($5), Monthly ($15), Annual ($120)
+- Payment Modal: Integration for Credit Card, UPI, and Net Banking
+- Status indicators for current active plan
+- Link to Identity Verification (KYC)
+
+See full file at: src/main/resources/templates/subscription.html
+
+---
+
+## 24. kyc.html
+Path: src/main/resources/templates/kyc.html
+
+Identity verification portal with:
+- Document upload simulation for Government ID
+- Verification status tracking (Pending/Verified)
+- Security shield animations and success states
+
+See full file at: src/main/resources/templates/kyc.html
+
 
 ---
 
@@ -895,13 +1091,13 @@ CryptoVault/
 │   │           ├── login.html
 │   │           ├── register.html
 │   │           ├── dashboard.html
-│   │           └── admin.html
+│   │           ├── admin.html
+│   │           ├── subscription.html
+│   │           └── kyc.html
 │   └── test/
 │       └── java/com/cryptovault/util/
 │           └── AESUtilsTest.java
 └── uploads/   (encrypted .enc files stored here)
-```
-
 ---
 
 ## Default Credentials
