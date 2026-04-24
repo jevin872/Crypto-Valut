@@ -11,6 +11,5 @@ com\cryptovault\exception\FileStorageException.class
 com\cryptovault\repository\UserRepository.class
 com\cryptovault\util\AESUtils.class
 com\cryptovault\CryptoVaultApplication.class
-com\cryptovault\controller\AuthController.class
 com\cryptovault\config\DataInitializer.class
 com\cryptovault\exception\GlobalExceptionHandler.class
